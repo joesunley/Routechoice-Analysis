@@ -143,12 +143,22 @@ export default function MapOverlay({
 
       {/* Drawing Preview */}
       {currentDrawing.length > 0 && (
-        <polyline
-          points={currentDrawing.map(p => `${p.x},${p.y}`).join(' ')}
-          fill="none" stroke="#3b82f6"
-          strokeWidth={BASE_LINE_WIDTH * drawingScale}
-          strokeDasharray="5,5"
-        />
+        <g>
+          {currentDrawing.map((point, index) => (
+            <circle
+              key={`point-${index}`}
+              cx={point.x}
+              cy={point.y}
+              r={3 / zoom}
+              fill="#3b82f6"
+            />
+          ))}
+          <polyline
+            points={currentDrawing.map(p => `${p.x},${p.y}`).join(' ')}
+            fill="none" stroke="#3b82f6"
+            strokeWidth={BASE_LINE_WIDTH * drawingScale}
+          />
+        </g>
       )}
     </svg>
   );
