@@ -263,6 +263,7 @@ export default function App() {
         calibrationPoints={calibrationPoints}
         draggedControlId={draggedControlId}
         drawingScale={drawingScale}
+        mode={mode} // Pass mode to MapWorkspace
       />
 
       {showCalibrationModal && (

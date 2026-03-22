@@ -1,7 +1,7 @@
 import React from 'react';
 import { Map } from 'lucide-react';
 import MapOverlay from './MapOverlay';
-import { Control, Variant, Point, MapDimensions, PanState } from '../types';
+import { Control, Variant, Point, MapDimensions, PanState, AppMode } from '../types';
 
 interface MapWorkspaceProps {
   workspaceRef: React.RefObject<HTMLDivElement | null>;
@@ -22,6 +22,7 @@ interface MapWorkspaceProps {
   calibrationPoints: Point[];
   draggedControlId: number | null;
   drawingScale: number;
+  mode: AppMode; // Add mode prop to reflect the current application mode
 }
 
 export default function MapWorkspace({
@@ -43,6 +44,7 @@ export default function MapWorkspace({
   calibrationPoints,
   draggedControlId,
   drawingScale,
+  mode,
 }: MapWorkspaceProps) {
   return (
     <div
@@ -84,6 +86,7 @@ export default function MapWorkspace({
             calibrationPoints={calibrationPoints}
             draggedControlId={draggedControlId}
             drawingScale={drawingScale}
+            isVariantMode={mode === 'variants'} // Use mode to determine variant mode
           />
         </div>
       )}

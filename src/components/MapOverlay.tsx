@@ -15,6 +15,7 @@ interface MapOverlayProps {
   calibrationPoints: Point[];
   draggedControlId: number | null;
   drawingScale: number;
+  isVariantMode: boolean; // New prop to indicate variant mode
 }
 
 export default function MapOverlay({
@@ -27,6 +28,7 @@ export default function MapOverlay({
   calibrationPoints,
   draggedControlId,
   drawingScale,
+  isVariantMode,
 }: MapOverlayProps) {
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
 
@@ -52,6 +54,7 @@ export default function MapOverlay({
         const isStart = i === 0;
         const isFinish = i === controls.length - 1 && i !== 0;
         const isBeingDragged = draggedControlId === c.id;
+        const isDimmed = isVariantMode && selectedLegIndex !== null && i !== selectedLegIndex && i !== selectedLegIndex + 1; // Refined logic to exclude first control in the leg
 
         if (isStart) {
           const size = circleRadius * 1.3;
@@ -64,7 +67,7 @@ export default function MapOverlay({
             rotation = Math.atan2(next.y - c.y, next.x - c.x) * (180 / Math.PI) + 90;
           }
           return (
-            <g key={c.id} opacity={isBeingDragged ? 0.6 : 1}>
+            <g key={c.id} opacity={isDimmed ? 0.3 : isBeingDragged ? 0.6 : 1}>
               <polygon
                 points={`${p1} ${p2} ${p3}`}
                 fill="none" stroke="#ec4899"
@@ -82,7 +85,7 @@ export default function MapOverlay({
 
         if (isFinish) {
           return (
-            <g key={c.id} opacity={isBeingDragged ? 0.6 : 1}>
+            <g key={c.id} opacity={isDimmed ? 0.3 : isBeingDragged ? 0.6 : 1}>
               <circle cx={c.x} cy={c.y} r={circleRadius * 0.7} fill="none" stroke="#ec4899" strokeWidth={BASE_LINE_WIDTH * drawingScale} />
               <circle cx={c.x} cy={c.y} r={circleRadius * 1.1} fill="none" stroke="#ec4899" strokeWidth={BASE_LINE_WIDTH * drawingScale} />
               <text
@@ -95,7 +98,7 @@ export default function MapOverlay({
         }
 
         return (
-          <g key={c.id} opacity={isBeingDragged ? 0.6 : 1}>
+          <g key={c.id} opacity={isDimmed ? 0.3 : isBeingDragged ? 0.6 : 1}>
             <circle cx={c.x} cy={c.y} r={circleRadius} fill="none" stroke="#ec4899" strokeWidth={BASE_LINE_WIDTH * drawingScale} />
             <text
               x={c.x + circleRadius} y={c.y - circleRadius}
@@ -116,7 +119,7 @@ export default function MapOverlay({
         const endMargin = (i === controls.length - 1) ? circleRadius * 1.2 : circleRadius;
         if (dist < startMargin + endMargin) return null;
         const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-        const isDimmed = selectedLegIndex !== null && selectedLegIndex !== i - 1;
+        const isDimmed = isVariantMode && selectedLegIndex !== null && selectedLegIndex !== i - 1; // Ensure dimming only in variant mode
         return (
           <line
             key={`line-${i}`}
