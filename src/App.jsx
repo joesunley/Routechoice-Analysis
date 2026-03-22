@@ -125,8 +125,23 @@ export default function App() {
   }, [controls, dpi, scale]);
 
   // --- Map Click ---
+  const handleShiftClick = (e) => {
+    if (e.shiftKey) {
+      if (mode === 'controls' && controls.length > 0) {
+        setControls(prev => prev.slice(0, -1));
+        return true; // Prevent further actions
+      } else if (mode === 'variants' && currentDrawing.length > 0) {
+        setCurrentDrawing(prev => prev.slice(0, -1));
+        return true; // Prevent further actions
+      }
+    }
+    return false;
+  };
+
   const handleMapClick = (e) => {
     if (!svgRef.current || !mapImage || showCalibrationModal || e.altKey) return;
+    if (handleShiftClick(e)) return; // Stop if shift-click handled
+
     const rect = svgRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoom;
     const y = (e.clientY - rect.top) / zoom;
