@@ -19,9 +19,12 @@ export function useViewport(mapDimensions: MapDimensions) {
       if (isZooming) return;
       e.preventDefault();
       const { zoom: currentZoom, pan: currentPan } = viewportState.current;
-      const zoomSensitivity = 0.0015;
-      const delta = -e.deltaY * zoomSensitivity;
-      let newZoom = currentZoom * (1 + delta);
+      const zoomFactor = 1.41;
+
+      let newZoom = (-e.deltaY > 0) ?
+        currentZoom * zoomFactor :
+        currentZoom / zoomFactor;
+    
       newZoom = Math.max(0.01, Math.min(newZoom, 50));
       const rect = workspace.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
