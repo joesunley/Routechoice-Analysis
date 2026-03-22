@@ -21,13 +21,12 @@ export default function ToolSection({ mode, setMode, controlsCount }: ToolSectio
           className={`flex-1 py-1.5 text-sm font-medium rounded-md flex justify-center items-center gap-1.5 no-drag cursor-pointer ${mode === 'controls' ? 'bg-white shadow-sm text-pink-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
           <MapPin size={14} /> Course
-        </button>
-        <button
+        </button>        <button
           onClick={() => setMode('variants')}
           disabled={controlsCount < 2}
           className={`flex-1 py-1.5 text-sm font-medium rounded-md flex justify-center items-center gap-1.5 disabled:opacity-50 no-drag cursor-pointer ${mode === 'variants' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <Route size={14} /> Variants
+          <Route size={14} /> Routechoices
         </button>
       </div>
     </section>

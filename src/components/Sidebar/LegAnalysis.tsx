@@ -35,11 +35,9 @@ export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelec
               >
                 <span className="text-xs font-black text-slate-700">{leg.label}</span>
                 <span className="text-[11px] font-mono text-slate-400">Straight: {leg.straightLength.toFixed(0)}m</span>
-              </div>
-
-              <div className="p-2 space-y-1.5">
+              </div>              <div className="p-2 space-y-1.5">
                 {legVariants.length === 0 ? (
-                  <div className="text-[10px] text-slate-400 italic text-center py-1">No variants drawn yet</div>
+                  <div className="text-[10px] text-slate-400 italic text-center py-1">No routechoices drawn yet</div>
                 ) : (
                   (() => {
                     const shortestVariantLen = Math.min(

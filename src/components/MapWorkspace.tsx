@@ -64,11 +64,10 @@ export default function MapWorkspace({
         </div>
       )}
       {!mapImage && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-8 text-center">
-          <Map size={64} className="mb-4 opacity-20" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-8 text-center">          <Map size={64} className="mb-4 opacity-20" />
           <h2 className="text-xl font-bold text-slate-400">No Map Loaded</h2>
           <p className="max-w-xs mt-2 text-sm">
-            Upload an orienteering map image to start planning your course and analyzing route variants.
+            Upload an orienteering map image to start planning your course and analyzing routechoices.
           </p>
         </div>
       )}
