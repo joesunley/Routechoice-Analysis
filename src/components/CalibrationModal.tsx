@@ -9,7 +9,7 @@ interface CalibrationModalProps {
 
 export default function CalibrationModal({ value, onChange, onApply, onCancel }: CalibrationModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-100 no-drag">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-100 no-drag">
       <div className="bg-white p-8 rounded-3xl shadow-2xl w-96">
         <h3 className="font-bold text-xl mb-4">Distance Between Points</h3>
         <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-tight">

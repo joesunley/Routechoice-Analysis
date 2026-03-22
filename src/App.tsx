@@ -324,23 +324,21 @@ export default function App() {
           onApply={finalizeCalibration}
           onCancel={() => { setShowCalibrationModal(false); setCalibrationPoints([]); setMode('controls'); }}
         />
-      )}
-
-      {showResetConfirmation && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded shadow-lg text-center">
-            <h2 className="text-lg font-bold mb-4">Confirm Reset</h2>
-            <p className="mb-4">Are you sure you want to reset all course data? This action cannot be undone.</p>
-            <div className="flex justify-center gap-4">
+      )}      {showResetConfirmation && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full mx-4">
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Confirm Reset</h2>
+            <p className="text-slate-600 mb-6">Are you sure you want to reset all course data? This action cannot be undone.</p>
+            <div className="flex gap-2">
               <button
                 onClick={handleResetConfirm}
-                className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 cursor-pointer"
+                className="flex-1 bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
               >
                 Confirm
               </button>
               <button
                 onClick={handleResetCancel}
-                className="bg-gray-300 py-2 px-4 rounded hover:bg-gray-400 cursor-pointer"
+                className="flex-1 text-slate-700 hover:bg-slate-100 rounded-lg font-bold py-2 px-4 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
