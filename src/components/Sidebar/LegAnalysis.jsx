@@ -28,28 +28,34 @@ export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelec
                 {legVariants.length === 0 ? (
                   <div className="text-[10px] text-slate-400 italic text-center py-1">No variants drawn yet</div>
                 ) : (
-                  legVariants.map(v => {
-                    const actualLen = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
-                    const percentExtra = ((actualLen / leg.straightLength) - 1) * 100;
-                    return (
-                      <div key={v.id} className="flex items-center justify-between group bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: v.color }} />
-                          <span className="text-xs font-bold w-4">{v.name}</span>
-                          <span className="text-xs font-mono font-medium truncate">{actualLen.toFixed(0)}m</span>
-                          <span className={`text-[10px] font-bold ${percentExtra > 10 ? 'text-orange-500' : 'text-slate-400'}`}>
-                            (+{percentExtra.toFixed(0)}%)
-                          </span>
-                        </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); deleteVariant(v.id); }}
-                          className="text-slate-300 hover:text-red-500 p-1 rounded transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
+                  (() => {
+                    const shortestVariantLen = Math.min(
+                      ...legVariants.map(variant => pixelsToMeters(calcTotalPixelDistance(variant.points), dpi, scale))
                     );
-                  })
+
+                    return legVariants.map(v => {
+                      const actualLen = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
+                      const percentExtra = ((actualLen / shortestVariantLen) - 1) * 100;
+                      return (
+                        <div key={v.id} className="flex items-center justify-between group bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: v.color }} />
+                            <span className="text-xs font-bold w-4">{v.name}</span>
+                            <span className="text-xs font-mono font-medium truncate">{actualLen.toFixed(0)}m</span>
+                            <span className={`text-[10px] font-bold ${percentExtra > 10 ? 'text-orange-500' : 'text-slate-400'}`}>
+                              (+{percentExtra.toFixed(0)}%)
+                            </span>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); deleteVariant(v.id); }}
+                            className="text-slate-300 hover:text-red-500 p-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      );
+                    });
+                  })()
                 )}
               </div>
             </div>
