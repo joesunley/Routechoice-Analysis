@@ -40,7 +40,6 @@ export function useViewport(mapDimensions: MapDimensions) {
     workspace.addEventListener('wheel', onWheel, { passive: false });
     return () => workspace.removeEventListener('wheel', onWheel);
   }, []);
-
   const resetZoom = () => {
     const fitZoom = Math.min(
       (window.innerWidth - 320) / mapDimensions.width,
@@ -54,5 +53,25 @@ export function useViewport(mapDimensions: MapDimensions) {
     });
   };
 
-  return { zoom, setZoom, pan, setPan, workspaceRef, viewportState, resetZoom };
+  const zoomToCenter = (zoomFactor: number) => {
+    const workspace = workspaceRef.current;
+    if (!workspace) return;
+
+    const rect = workspace.getBoundingClientRect();
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+
+    const { zoom: currentZoom, pan: currentPan } = viewportState.current;
+    const mapX = (centerX - currentPan.x) / currentZoom;
+    const mapY = (centerY - currentPan.y) / currentZoom;
+
+    const newZoom = Math.max(0.01, Math.min(currentZoom * zoomFactor, 50));
+    setPan({
+      x: centerX - mapX * newZoom,
+      y: centerY - mapY * newZoom,
+    });
+    setZoom(newZoom);
+  };
+
+  return { zoom, setZoom, pan, setPan, workspaceRef, viewportState, resetZoom, zoomToCenter };
 }

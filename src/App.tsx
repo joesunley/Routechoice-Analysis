@@ -26,18 +26,16 @@ export default function App() {
   const [dragStart, setDragStart] = useState<PanState>({ x: 0, y: 0 });
   const [mouseDownPos, setMouseDownPos] = useState<PanState>({ x: 0, y: 0 });
   const isMouseDownRef = useRef(false);
-
-  const [showResetConfirmation, setShowResetConfirmation] = useState(false); // State for reset confirmation modal
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadDataRef = useRef<HTMLInputElement>(null);
-  const { zoom, setZoom, pan, setPan, workspaceRef, viewportState } = useViewport(mapDimensions);
-  const {
+  const { zoom, setZoom, pan, setPan, workspaceRef, viewportState, resetZoom, zoomToCenter } = useViewport(mapDimensions);  const {
     controls, setControls,
-    isAltDragging, draggedControlId, altKeyPressed,
+    isAltDragging, draggedControlId,
     addControl, tryStartAltDrag, moveAltDraggedControl, endAltDrag,
-  } = useControls();  
+  } = useControls();
   const {
     variants, setVariants,
     currentDrawing, setCurrentDrawing,
@@ -298,12 +296,14 @@ export default function App() {
         currentDrawing={currentDrawing}
         selectedLegIndex={selectedLegIndex}
         calibrationPoints={calibrationPoints}
-        draggedControlId={draggedControlId}
-        drawingScale={drawingScale}
+        draggedControlId={draggedControlId}        drawingScale={drawingScale}
         mode={mode}
         draggedVariantId={draggedVariantId}
         isAltDraggingLabel={isAltDraggingLabel}
-      />{showCalibrationModal && (
+        resetZoom={resetZoom}
+        zoomToCenter={zoomToCenter}
+      />
+      {showCalibrationModal && (
         <CalibrationModal
           value={tempCalibrationValue}
           onChange={setTempCalibrationValue}

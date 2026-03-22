@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map } from 'lucide-react';
+import { Map, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import MapOverlay from './MapOverlay';
 import { Control, Variant, Point, MapDimensions, PanState, AppMode } from '../types';
 
@@ -25,6 +25,8 @@ interface MapWorkspaceProps {
   mode: AppMode;
   draggedVariantId: number | null;
   isAltDraggingLabel: boolean;
+  resetZoom: () => void;
+  zoomToCenter: (zoomFactor: number) => void;
 }
 
 export default function MapWorkspace({
@@ -49,6 +51,8 @@ export default function MapWorkspace({
   mode,
   draggedVariantId,
   isAltDraggingLabel,
+  resetZoom,
+  zoomToCenter,
 }: MapWorkspaceProps) {return (
     <div
       ref={workspaceRef}
@@ -74,9 +78,7 @@ export default function MapWorkspace({
             Upload an orienteering map image to start planning your course and analyzing routechoices.
           </p>
         </div>
-      )}
-
-      {mapImage && (
+      )}      {mapImage && (
         <div
           className="absolute top-0 left-0 bg-white origin-top-left shadow-2xl"
           style={{
@@ -99,6 +101,33 @@ export default function MapWorkspace({
             draggedVariantId={draggedVariantId}
             isAltDraggingLabel={isAltDraggingLabel}
           />
+        </div>
+      )}      {/* Floating Zoom Controls */}
+      {mapImage && (
+        <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-white rounded-full shadow-lg border border-slate-200 p-1.5 z-40 no-drag">
+          <button
+            onClick={() => zoomToCenter(1 / 1.41)}
+            className="hover:bg-slate-100 text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+            title="Zoom out"
+          >
+            <ZoomOut size={16} />
+          </button>
+          <div className="w-px h-4 bg-slate-200" />
+          <button
+            onClick={resetZoom}
+            className="hover:bg-slate-100 text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+            title="Reset zoom and pan"
+          >
+            <Maximize2 size={16} />
+          </button>
+          <div className="w-px h-4 bg-slate-200" />
+          <button
+            onClick={() => zoomToCenter(1.41)}
+            className="hover:bg-slate-100 text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"
+            title="Zoom in"
+          >
+            <ZoomIn size={16} />
+          </button>
         </div>
       )}
     </div>
