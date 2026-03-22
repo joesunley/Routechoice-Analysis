@@ -178,7 +178,7 @@ export default function App() {
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (mode !== 'controls') return;
+    if (mode !== 'controls' && mode !== 'variants') return;
     if (isAltDragging && draggedControlId !== null) {
       const rect = svgRef.current!.getBoundingClientRect();
       moveAltDraggedControl((e.clientX - rect.left) / zoom, (e.clientY - rect.top) / zoom);
