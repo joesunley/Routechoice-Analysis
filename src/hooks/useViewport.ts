@@ -10,7 +10,6 @@ export function useViewport(mapDimensions: MapDimensions) {
   useEffect(() => {
     viewportState.current = { zoom, pan };
   }, [zoom, pan]);
-
   useEffect(() => {
     const workspace = workspaceRef.current;
     if (!workspace) return;
@@ -19,16 +18,16 @@ export function useViewport(mapDimensions: MapDimensions) {
     const onWheel = (e: WheelEvent) => {
       if (isZooming) return;
       e.preventDefault();
-      const { zoom, pan } = viewportState.current;
+      const { zoom: currentZoom, pan: currentPan } = viewportState.current;
       const zoomSensitivity = 0.0015;
       const delta = -e.deltaY * zoomSensitivity;
-      let newZoom = zoom * (1 + delta);
+      let newZoom = currentZoom * (1 + delta);
       newZoom = Math.max(0.01, Math.min(newZoom, 50));
       const rect = workspace.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      const mapX = (mouseX - pan.x) / zoom;
-      const mapY = (mouseY - pan.y) / zoom;
+      const mapX = (mouseX - currentPan.x) / currentZoom;
+      const mapY = (mouseY - currentPan.y) / currentZoom;
       isZooming = true;
       setZoom(newZoom);
       setPan({ x: mouseX - mapX * newZoom, y: mouseY - mapY * newZoom });
