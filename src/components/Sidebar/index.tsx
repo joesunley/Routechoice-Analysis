@@ -18,11 +18,11 @@ interface SidebarProps {
   dpi: number;
   setDpi: (v: string) => void;
   drawingScale: number;
-  setDrawingScale: (v: number) => void;
-  mode: AppMode;
+  setDrawingScale: (v: number) => void;  mode: AppMode;
   setMode: (mode: AppMode) => void;
   mapImage: string | null;
   onStartCalibrate: () => void;
+  onCancelCalibrate: () => void;
   controls: Control[];
   legs: Leg[];
   variants: Variant[];
@@ -39,7 +39,7 @@ export default function Sidebar({
   onLoadMap, onLoadData, onSaveData, fileInputRef, loadDataRef,
   scale, setScale, dpi, setDpi, drawingScale, setDrawingScale,
   mode, setMode, mapImage,
-  onStartCalibrate,
+  onStartCalibrate, onCancelCalibrate,
   controls, legs,
   variants, deleteVariant,
   currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, resetCourseData,
@@ -63,14 +63,13 @@ export default function Sidebar({
           hasControls={controls.length > 0}
           fileInputRef={fileInputRef}
           loadDataRef={loadDataRef}
-        />
-
-        <SettingsSection
+        />        <SettingsSection
           scale={scale} setScale={setScale}
           dpi={dpi} setDpi={setDpi}
           drawingScale={drawingScale} setDrawingScale={setDrawingScale}
           mode={mode}
           onStartCalibrate={onStartCalibrate}
+          onCancelCalibrate={onCancelCalibrate}
         />
 
         {mapImage && (

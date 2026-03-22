@@ -13,9 +13,10 @@ interface SettingsSectionProps {
   setDrawingScale: (v: number) => void;
   mode: AppMode;
   onStartCalibrate: () => void;
+  onCancelCalibrate: () => void;
 }
 
-export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingScale, setDrawingScale, mode, onStartCalibrate }: SettingsSectionProps) {
+export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingScale, setDrawingScale, mode, onStartCalibrate, onCancelCalibrate }: SettingsSectionProps) {
   return (
     <section className="space-y-4">
       <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -58,12 +59,12 @@ export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingS
           <p className="text-[9px] text-slate-400 mt-1">Adjust manually or use the calibration tool below</p>
         </div>        <div className="relative pt-2">
           <button
-            onClick={onStartCalibrate}
-            className={`w-full flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg text-xs font-bold border transition-all no-drag cursor-pointer ${mode === 'calibrate' ? 'bg-orange-500 border-orange-600 text-white shadow-lg scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-orange-200'}`}
+            onClick={mode === 'calibrate' ? onCancelCalibrate : onStartCalibrate}
+            className={`w-full flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg text-xs font-bold border transition-all no-drag cursor-pointer ${mode === 'calibrate' ? 'bg-red-400 border-red-600 text-white shadow-lg scale-[1.02] hover:bg-red-600' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-orange-200'}`}
           >
             <div className="flex items-center gap-2">
               <Ruler size={16} />
-              <span>{mode === 'calibrate' ? 'Calculating...' : 'Calculate DPI'}</span>
+              <span>{mode === 'calibrate' ? 'Cancel Calibration' : 'Calculate DPI'}</span>
             </div>
           </button>
         </div>

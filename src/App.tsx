@@ -247,12 +247,12 @@ export default function App() {
         onSaveData={exportData}
         fileInputRef={fileInputRef}
         loadDataRef={loadDataRef}
-        scale={scale} setScale={handleSetScale}
-        dpi={dpi} setDpi={handleSetDpi}
+        scale={scale} setScale={handleSetScale}        dpi={dpi} setDpi={handleSetDpi}
         drawingScale={drawingScale} setDrawingScale={setDrawingScale}
         mode={mode} setMode={setMode}
         mapImage={mapImage}
         onStartCalibrate={() => { setMode('calibrate'); setCalibrationPoints([]); }}
+        onCancelCalibrate={() => { setMode('controls'); setCalibrationPoints([]); setShowCalibrationModal(false); }}
         controls={controls}
         legs={legs}
         variants={variants}
@@ -285,14 +285,12 @@ export default function App() {
         draggedControlId={draggedControlId}
         drawingScale={drawingScale}
         mode={mode} // Pass mode to MapWorkspace
-      />
-
-      {showCalibrationModal && (
+      />      {showCalibrationModal && (
         <CalibrationModal
           value={tempCalibrationValue}
           onChange={setTempCalibrationValue}
           onApply={finalizeCalibration}
-          onCancel={() => { setShowCalibrationModal(false); setCalibrationPoints([]); }}
+          onCancel={() => { setShowCalibrationModal(false); setCalibrationPoints([]); setMode('controls'); }}
         />
       )}
 
