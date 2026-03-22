@@ -13,7 +13,10 @@ export function useViewport(mapDimensions) {
   useEffect(() => {
     const workspace = workspaceRef.current;
     if (!workspace) return;
+    let isZooming = false;
+
     const onWheel = (e) => {
+      if (isZooming) return;
       e.preventDefault();
       const { zoom, pan } = viewportState.current;
       const zoomSensitivity = 0.0015;
@@ -25,9 +28,12 @@ export function useViewport(mapDimensions) {
       const mouseY = e.clientY - rect.top;
       const mapX = (mouseX - pan.x) / zoom;
       const mapY = (mouseY - pan.y) / zoom;
+      isZooming = true;
       setZoom(newZoom);
       setPan({ x: mouseX - mapX * newZoom, y: mouseY - mapY * newZoom });
+      setTimeout(() => { isZooming = false; }, 50); // Prevent simultaneous pan
     };
+
     workspace.addEventListener('wheel', onWheel, { passive: false });
     return () => workspace.removeEventListener('wheel', onWheel);
   }, []);
