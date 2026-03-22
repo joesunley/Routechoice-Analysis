@@ -302,6 +302,8 @@ export default function App() {
         isAltDraggingLabel={isAltDraggingLabel}
         resetZoom={resetZoom}
         zoomToCenter={zoomToCenter}
+        dpi={dpi}
+        scale={scale}
       />
       {showCalibrationModal && (
         <CalibrationModal

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE
 } from '../constants';
-import { calcPixelDistance } from '../utils/geometry';
+import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from '../utils/geometry';
 import { Control, Variant, Point } from '../types';
 
 interface MapOverlayProps {
@@ -15,9 +15,11 @@ interface MapOverlayProps {
   calibrationPoints: Point[];
   draggedControlId: number | null;
   drawingScale: number;
-  isVariantMode: boolean; // New prop to indicate variant mode
+  isVariantMode: boolean;
   draggedVariantId: number | null;
   isAltDraggingLabel: boolean;
+  dpi?: number;
+  scale?: number;
 }
 
 export default function MapOverlay({
@@ -33,6 +35,8 @@ export default function MapOverlay({
   isVariantMode,
   draggedVariantId,
   isAltDraggingLabel,
+  dpi = 150,
+  scale = 4000,
 }: MapOverlayProps) {
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
 
@@ -133,13 +137,14 @@ export default function MapOverlay({
             strokeWidth={BASE_LINE_WIDTH * drawingScale}
             opacity={isDimmed ? 0.3 : 1}
           />
-        );
-      })}      {/* Route Variants */}
-      {variants.map(v => {
+        );      })}
+
+      {/* Route Variants */}      {isVariantMode && variants.map(v => {
         if (v.legIndex !== selectedLegIndex) return null;
         const midPoint = v.points[Math.floor(v.points.length / 2)];
         const labelOffset = v.labelOffset || { x: 0, y: 0 };
         const isBeingDragged = isAltDraggingLabel && draggedVariantId === v.id;
+        const variantDistance = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
         return (
           <g key={v.id} opacity={isBeingDragged ? 0.6 : 1}>
             <polyline
@@ -151,8 +156,7 @@ export default function MapOverlay({
               opacity={v.legIndex === selectedLegIndex ? 1 : 0.3}
             />
             {v.legIndex === selectedLegIndex && (
-              <>
-                {/* Invisible hit target for easier grabbing */}
+              <>                {/* Invisible hit target for easier grabbing */}
                 <circle
                   cx={midPoint.x + labelOffset.x}
                   cy={midPoint.y + labelOffset.y}
@@ -172,7 +176,7 @@ export default function MapOverlay({
                   strokeWidth={2 * drawingScale}
                   paintOrder="stroke"
                 >
-                  {v.name}
+                  {v.name}: {variantDistance.toFixed(0)}m
                 </text>
               </>
             )}

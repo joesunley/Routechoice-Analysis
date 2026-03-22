@@ -27,6 +27,8 @@ interface MapWorkspaceProps {
   isAltDraggingLabel: boolean;
   resetZoom: () => void;
   zoomToCenter: (zoomFactor: number) => void;
+  dpi: number;
+  scale: number;
 }
 
 export default function MapWorkspace({
@@ -53,6 +55,8 @@ export default function MapWorkspace({
   isAltDraggingLabel,
   resetZoom,
   zoomToCenter,
+  dpi,
+  scale,
 }: MapWorkspaceProps) {return (
     <div
       ref={workspaceRef}
@@ -100,6 +104,8 @@ export default function MapWorkspace({
             isVariantMode={mode === 'variants'}
             draggedVariantId={draggedVariantId}
             isAltDraggingLabel={isAltDraggingLabel}
+            dpi={dpi}
+            scale={scale}
           />
         </div>
       )}      {/* Floating Zoom Controls */}
