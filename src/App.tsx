@@ -7,6 +7,7 @@ import { calcPixelDistance, calculateDpiFromPoints, pixelsToMeters } from './uti
 import Sidebar from './components/Sidebar/index';
 import MapWorkspace from './components/MapWorkspace';
 import CalibrationModal from './components/CalibrationModal';
+import BaseModal from './components/BaseModal';
 import { AppMode, MapDimensions, PanState, Point } from './types';
 
 export default function App() {
@@ -325,10 +326,11 @@ export default function App() {
           onCancel={() => { setShowCalibrationModal(false); setCalibrationPoints([]); setMode('controls'); }}
         />
       )}      {showResetConfirmation && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
-          <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full mx-4">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">Confirm Reset</h2>
-            <p className="text-slate-600 mb-6">Are you sure you want to reset all course data? This action cannot be undone.</p>
+        <BaseModal
+          isOpen={showResetConfirmation}
+          title="Confirm Reset"
+          onClose={handleResetCancel}
+          footer={
             <div className="flex gap-2">
               <button
                 onClick={handleResetConfirm}
@@ -343,8 +345,11 @@ export default function App() {
                 Cancel
               </button>
             </div>
-          </div>
-        </div>
+          }
+          maxWidth="max-w-sm"
+        >
+          <p className="text-slate-600">Are you sure you want to reset all course data? This action cannot be undone.</p>
+        </BaseModal>
       )}
     </div>
   );
