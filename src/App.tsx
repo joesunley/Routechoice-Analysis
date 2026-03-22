@@ -22,10 +22,10 @@ export default function App() {
   const [calibrationPoints, setCalibrationPoints] = useState<Point[]>([]);
   const [showCalibrationModal, setShowCalibrationModal] = useState(false);
   const [tempCalibrationValue, setTempCalibrationValue] = useState('500');
-
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<PanState>({ x: 0, y: 0 });
   const [mouseDownPos, setMouseDownPos] = useState<PanState>({ x: 0, y: 0 });
+  const isMouseDownRef = useRef(false);
 
   const [showResetConfirmation, setShowResetConfirmation] = useState(false); // State for reset confirmation modal
 
@@ -186,11 +186,11 @@ export default function App() {
       setCalibrationPoints(newPoints);
       if (newPoints.length === 2) setShowCalibrationModal(true);
     }
-  };
-  // --- Mouse Handlers ---
+  };  // --- Mouse Handlers ---
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.no-drag')) return;
     if (e.button !== 0) return;
+    isMouseDownRef.current = true;
     const rect = svgRef.current?.getBoundingClientRect();
     const mapX = rect ? (e.clientX - rect.left) / zoom : 0;
     const mapY = rect ? (e.clientY - rect.top) / zoom : 0;
@@ -200,11 +200,10 @@ export default function App() {
       // Otherwise try dragging control
       if (tryStartAltDrag(mapX, mapY, zoom)) return;
     }
-    setIsDragging(true);
     setDragStart({ x: e.clientX - viewportState.current.pan.x, y: e.clientY - viewportState.current.pan.y });
     setMouseDownPos({ x: e.clientX, y: e.clientY });
   };
-  const handleMouseMove = (e: React.MouseEvent) => {
+    const handleMouseMove = (e: React.MouseEvent) => {
     if (mode !== 'controls' && mode !== 'variants') return;
     if (isAltDraggingLabel && draggedVariantId !== null) {
       const rect = svgRef.current!.getBoundingClientRect();
@@ -217,20 +216,26 @@ export default function App() {
       moveAltDraggedControl((e.clientX - rect.left) / zoom, (e.clientY - rect.top) / zoom);
       return;
     }
-    if (isDragging) {
+    // Check if mouse has moved and we should start dragging
+    const hasMoved = isMouseDownRef.current && (mouseDownPos.x !== e.clientX || mouseDownPos.y !== e.clientY);
+    if (hasMoved || isDragging) {
+      setIsDragging(true);
       setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
     }
   };
-  const handleMouseUp = (e: React.MouseEvent) => {
+    const handleMouseUp = (e: React.MouseEvent) => {
+    isMouseDownRef.current = false;
     if (isAltDraggingLabel || isAltDragging) { 
       if (isAltDraggingLabel) endAltDragLabel();
       else endAltDrag();
+      setIsDragging(false);
       return; 
     }
-    if (!isDragging) return;
-    setIsDragging(false);
     const dist = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
-    if (dist < 5) handleMapClick(e);
+    if (dist < 5) {
+      handleMapClick(e);
+    }
+    setIsDragging(false);
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
