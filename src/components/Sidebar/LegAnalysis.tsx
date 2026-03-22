@@ -1,15 +1,27 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
+import { Leg, Variant, AppMode } from '../../types';
 
-export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelectedLegIndex, setMode, deleteVariant, dpi, scale }) {
+interface LegAnalysisProps {
+  legs: Leg[];
+  variants: Variant[];
+  selectedLegIndex: number;
+  setSelectedLegIndex: (i: number) => void;
+  setMode: (mode: AppMode) => void;
+  deleteVariant: (id: number) => void;
+  dpi: number;
+  scale: number;
+}
+
+export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelectedLegIndex, setMode, deleteVariant, dpi, scale }: LegAnalysisProps) {
   return (
     <section className="space-y-3 text-sm pb-10">
       <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Leg Analysis</h2>
       <div className="space-y-3">
         {legs.map(leg => {
           const legVariants = variants.filter(v => v.legIndex === leg.index);
-          const isSelected = selectedLegIndex === leg.index && true;
+          const isSelected = selectedLegIndex === leg.index;
 
           return (
             <div

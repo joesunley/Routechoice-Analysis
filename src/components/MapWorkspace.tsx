@@ -1,6 +1,28 @@
 import React from 'react';
 import { Map } from 'lucide-react';
 import MapOverlay from './MapOverlay';
+import { Control, Variant, Point, MapDimensions, PanState } from '../types';
+
+interface MapWorkspaceProps {
+  workspaceRef: React.RefObject<HTMLDivElement | null>;
+  mapImage: string | null;
+  mapDimensions: MapDimensions;
+  pan: PanState;
+  zoom: number;
+  cursor: string;
+  onMouseDown: (e: React.MouseEvent) => void;
+  onMouseMove: (e: React.MouseEvent) => void;
+  onMouseUp: (e: React.MouseEvent) => void;
+  onContextMenu: (e: React.MouseEvent) => void;
+  svgRef: React.RefObject<SVGSVGElement | null>;
+  controls: Control[];
+  variants: Variant[];
+  currentDrawing: Point[];
+  selectedLegIndex: number | null;
+  calibrationPoints: Point[];
+  draggedControlId: number | null;
+  drawingScale: number;
+}
 
 export default function MapWorkspace({
   workspaceRef,
@@ -13,7 +35,6 @@ export default function MapWorkspace({
   onMouseMove,
   onMouseUp,
   onContextMenu,
-  // overlay props
   svgRef,
   controls,
   variants,
@@ -22,7 +43,7 @@ export default function MapWorkspace({
   calibrationPoints,
   draggedControlId,
   drawingScale,
-}) {
+}: MapWorkspaceProps) {
   return (
     <div
       ref={workspaceRef}

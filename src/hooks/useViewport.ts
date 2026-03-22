@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import { MapDimensions, PanState } from '../types';
 
-export function useViewport(mapDimensions) {
+export function useViewport(mapDimensions: MapDimensions) {
   const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [pan, setPan] = useState<PanState>({ x: 0, y: 0 });
   const viewportState = useRef({ zoom, pan });
-  const workspaceRef = useRef(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     viewportState.current = { zoom, pan };
@@ -15,7 +16,7 @@ export function useViewport(mapDimensions) {
     if (!workspace) return;
     let isZooming = false;
 
-    const onWheel = (e) => {
+    const onWheel = (e: WheelEvent) => {
       if (isZooming) return;
       e.preventDefault();
       const { zoom, pan } = viewportState.current;
@@ -31,7 +32,7 @@ export function useViewport(mapDimensions) {
       isZooming = true;
       setZoom(newZoom);
       setPan({ x: mouseX - mapX * newZoom, y: mouseY - mapY * newZoom });
-      setTimeout(() => { isZooming = false; }, 50); // Prevent simultaneous pan
+      setTimeout(() => { isZooming = false; }, 50);
     };
 
     workspace.addEventListener('wheel', onWheel, { passive: false });

@@ -2,8 +2,20 @@ import React from 'react';
 import { Settings, Ruler } from 'lucide-react';
 import { COMMON_SCALES } from '../../constants';
 import { handleNumericInput, inputEventGuard } from '../../utils/geometry';
+import { AppMode } from '../../types';
 
-export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingScale, setDrawingScale, mode, onStartCalibrate }) {
+interface SettingsSectionProps {
+  scale: number;
+  setScale: (v: string) => void;
+  dpi: number;
+  setDpi: (v: string) => void;
+  drawingScale: number;
+  setDrawingScale: (v: number) => void;
+  mode: AppMode;
+  onStartCalibrate: () => void;
+}
+
+export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingScale, setDrawingScale, mode, onStartCalibrate }: SettingsSectionProps) {
   return (
     <section className="space-y-4">
       <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -17,7 +29,7 @@ export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingS
             {COMMON_SCALES.map(s => (
               <button
                 key={s}
-                onClick={() => setScale(s)}
+                onClick={() => setScale(String(s))}
                 className={`px-2 py-1 text-[10px] font-bold rounded border transition-all no-drag ${scale == s ? 'bg-blue-600 border-blue-700 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}
               >
                 {s / 1000}k

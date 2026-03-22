@@ -1,8 +1,20 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
+import { Leg, Point } from '../../types';
 
-export default function LegDrawingPanel({ legs, selectedLegIndex, setSelectedLegIndex, currentDrawing, onUndo, onSave, dpi, scale }) {
+interface LegDrawingPanelProps {
+  legs: Leg[];
+  selectedLegIndex: number;
+  setSelectedLegIndex: (i: number) => void;
+  currentDrawing: Point[];
+  onUndo: () => void;
+  onSave: () => void;
+  dpi: number;
+  scale: number;
+}
+
+export default function LegDrawingPanel({ legs, selectedLegIndex, setSelectedLegIndex, currentDrawing, onUndo, onSave, dpi, scale }: LegDrawingPanelProps) {
   const drawingLength = pixelsToMeters(calcTotalPixelDistance(currentDrawing), dpi, scale);
 
   return (

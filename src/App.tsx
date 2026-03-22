@@ -6,28 +6,29 @@ import { calcPixelDistance, calculateDpiFromPoints, pixelsToMeters } from './uti
 import Sidebar from './components/Sidebar/index';
 import MapWorkspace from './components/MapWorkspace';
 import CalibrationModal from './components/CalibrationModal';
+import { AppMode, MapDimensions, PanState, Point } from './types';
 
 export default function App() {
-  const [mapImage, setMapImage] = useState(null);
-  const [mapDimensions, setMapDimensions] = useState({ width: 0, height: 0 });
+  const [mapImage, setMapImage] = useState<string | null>(null);
+  const [mapDimensions, setMapDimensions] = useState<MapDimensions>({ width: 0, height: 0 });
 
-  const [scale, setScale] = useState(4000);
-  const [dpi, setDpi] = useState(150);
-  const [drawingScale, setDrawingScale] = useState(1.0);
+  const [scale, setScale] = useState<number>(4000);
+  const [dpi, setDpi] = useState<number>(150);
+  const [drawingScale, setDrawingScale] = useState<number>(1.0);
 
-  const [mode, setMode] = useState('controls');
+  const [mode, setMode] = useState<AppMode>('controls');
 
-  const [calibrationPoints, setCalibrationPoints] = useState([]);
+  const [calibrationPoints, setCalibrationPoints] = useState<Point[]>([]);
   const [showCalibrationModal, setShowCalibrationModal] = useState(false);
   const [tempCalibrationValue, setTempCalibrationValue] = useState('500');
 
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [mouseDownPos, setMouseDownPos] = useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<PanState>({ x: 0, y: 0 });
+  const [mouseDownPos, setMouseDownPos] = useState<PanState>({ x: 0, y: 0 });
 
-  const svgRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const loadDataRef = useRef(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const loadDataRef = useRef<HTMLInputElement>(null);
 
   const { zoom, setZoom, pan, setPan, workspaceRef, viewportState } = useViewport(mapDimensions);
   const {
@@ -42,16 +43,20 @@ export default function App() {
     addDrawingPoint, undoLastPoint, handleFinishVariant, deleteVariant,
   } = useVariants();
 
+  // --- Numeric input helpers ---
+  const handleSetScale = (v: string) => setScale(Number(v) || scale);
+  const handleSetDpi = (v: string) => setDpi(Number(v) || dpi);
+
   // --- Map Loading ---
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
         setMapDimensions({ width: img.width, height: img.height });
-        setMapImage(event.target.result);
+        setMapImage(event.target?.result as string);
         const availableWidth = window.innerWidth - 320;
         const availableHeight = window.innerHeight;
         const fitZoom = Math.min(availableWidth / img.width, availableHeight / img.height) * 0.90;
@@ -59,7 +64,7 @@ export default function App() {
         setZoom(z);
         setPan({ x: (availableWidth - img.width * z) / 2, y: (availableHeight - img.height * z) / 2 });
       };
-      img.src = event.target.result;
+      img.src = event.target?.result as string;
     };
     reader.readAsDataURL(file);
   };
@@ -88,13 +93,13 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const importData = (e) => {
-    const file = e.target.files[0];
+  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const data = JSON.parse(event.target.result);
+        const data = JSON.parse(event.target?.result as string);
         if (data.scale) setScale(data.scale);
         if (data.dpi) setDpi(data.dpi);
         if (data.drawingScale) setDrawingScale(data.drawingScale);
@@ -109,7 +114,7 @@ export default function App() {
   const legs = useMemo(() => {
     return controls.slice(0, -1).map((p1, i) => {
       const p2 = controls[i + 1];
-      const getLabel = (idx) => {
+      const getLabel = (idx: number) => {
         if (idx === 0) return 'S';
         if (idx === controls.length - 1) return 'F';
         return idx.toString();
@@ -125,22 +130,22 @@ export default function App() {
   }, [controls, dpi, scale]);
 
   // --- Map Click ---
-  const handleShiftClick = (e) => {
+  const handleShiftClick = (e: React.MouseEvent): boolean => {
     if (e.shiftKey) {
       if (mode === 'controls' && controls.length > 0) {
         setControls(prev => prev.slice(0, -1));
-        return true; // Prevent further actions
+        return true;
       } else if (mode === 'variants' && currentDrawing.length > 0) {
         setCurrentDrawing(prev => prev.slice(0, -1));
-        return true; // Prevent further actions
+        return true;
       }
     }
     return false;
   };
 
-  const handleMapClick = (e) => {
+  const handleMapClick = (e: React.MouseEvent) => {
     if (!svgRef.current || !mapImage || showCalibrationModal || e.altKey) return;
-    if (handleShiftClick(e)) return; // Stop if shift-click handled
+    if (handleShiftClick(e)) return;
 
     const rect = svgRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / zoom;
@@ -160,8 +165,8 @@ export default function App() {
   };
 
   // --- Mouse Handlers ---
-  const handleMouseDown = (e) => {
-    if (e.target.closest('.no-drag')) return;
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('.no-drag')) return;
     if (e.button !== 0) return;
     const rect = svgRef.current?.getBoundingClientRect();
     const mapX = rect ? (e.clientX - rect.left) / zoom : 0;
@@ -172,10 +177,10 @@ export default function App() {
     setMouseDownPos({ x: e.clientX, y: e.clientY });
   };
 
-  const handleMouseMove = (e) => {
-    if (mode !== 'controls') return; // Only allow moving in course mode
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (mode !== 'controls') return;
     if (isAltDragging && draggedControlId !== null) {
-      const rect = svgRef.current.getBoundingClientRect();
+      const rect = svgRef.current!.getBoundingClientRect();
       moveAltDraggedControl((e.clientX - rect.left) / zoom, (e.clientY - rect.top) / zoom);
       return;
     }
@@ -184,7 +189,7 @@ export default function App() {
     }
   };
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = (e: React.MouseEvent) => {
     if (isAltDragging) { endAltDrag(); return; }
     if (!isDragging) return;
     setIsDragging(false);
@@ -192,10 +197,10 @@ export default function App() {
     if (dist < 5) handleMapClick(e);
   };
 
-  const handleContextMenu = (e) => {
+  const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     if (mode === 'variants' && currentDrawing.length >= 1) {
-      const rect = svgRef.current.getBoundingClientRect();
+      const rect = svgRef.current!.getBoundingClientRect();
       const x = (e.clientX - rect.left) / zoom;
       const y = (e.clientY - rect.top) / zoom;
       const last = currentDrawing[currentDrawing.length - 1];
@@ -206,7 +211,7 @@ export default function App() {
     }
   };
 
-  const getCursor = () => {
+  const getCursor = (): string => {
     if (isAltDragging) return 'grabbing';
     if (altKeyPressed) return 'crosshair';
     if (isDragging) return 'grabbing';
@@ -222,8 +227,8 @@ export default function App() {
         onSaveData={exportData}
         fileInputRef={fileInputRef}
         loadDataRef={loadDataRef}
-        scale={scale} setScale={setScale}
-        dpi={dpi} setDpi={setDpi}
+        scale={scale} setScale={handleSetScale}
+        dpi={dpi} setDpi={handleSetDpi}
         drawingScale={drawingScale} setDrawingScale={setDrawingScale}
         mode={mode} setMode={setMode}
         mapImage={mapImage}

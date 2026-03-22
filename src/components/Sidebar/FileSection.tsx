@@ -1,7 +1,16 @@
 import React from 'react';
 import { Upload, Save, FolderOpen } from 'lucide-react';
 
-export default function FileSection({ onLoadMap, onLoadData, onSaveData, hasControls, fileInputRef, loadDataRef }) {
+interface FileSectionProps {
+  onLoadMap: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onLoadData: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSaveData: () => void;
+  hasControls: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  loadDataRef: React.RefObject<HTMLInputElement | null>;
+}
+
+export default function FileSection({ onLoadMap, onLoadData, onSaveData, hasControls, fileInputRef, loadDataRef }: FileSectionProps) {
   return (
     <section className="space-y-3">
       <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Project Files</h2>

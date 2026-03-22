@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import { Point, Variant } from '../types';
 import { VARIANT_COLORS } from '../constants';
 
 export function useVariants() {
-  const [variants, setVariants] = useState([]);
-  const [currentDrawing, setCurrentDrawing] = useState([]);
+  const [variants, setVariants] = useState<Variant[]>([]);
+  const [currentDrawing, setCurrentDrawing] = useState<Point[]>([]);
   const [selectedLegIndex, setSelectedLegIndex] = useState(0);
 
-  const addDrawingPoint = (x, y) => {
+  const addDrawingPoint = (x: number, y: number) => {
     setCurrentDrawing(prev => [...prev, { x, y }]);
   };
 
@@ -14,7 +15,7 @@ export function useVariants() {
     setCurrentDrawing(prev => prev.slice(0, -1));
   };
 
-  const handleFinishVariant = (pointsOverride = null) => {
+  const handleFinishVariant = (pointsOverride: Point[] | null = null) => {
     const pointsToSave = pointsOverride || currentDrawing;
     if (pointsToSave.length < 2) {
       setCurrentDrawing([]);
@@ -29,7 +30,7 @@ export function useVariants() {
     setCurrentDrawing([]);
   };
 
-  const deleteVariant = (id) => {
+  const deleteVariant = (id: number) => {
     setVariants(prev => prev.filter(v => v.id !== id));
   };
 

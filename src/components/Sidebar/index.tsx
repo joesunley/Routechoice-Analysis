@@ -5,25 +5,45 @@ import SettingsSection from './SettingsSection';
 import ToolSection from './ToolSection';
 import LegDrawingPanel from './LegDrawingPanel';
 import LegAnalysis from './LegAnalysis';
+import { Control, Leg, Variant, Point, AppMode } from '../../types';
+
+interface SidebarProps {
+  onLoadMap: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onLoadData: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSaveData: () => void;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  loadDataRef: React.RefObject<HTMLInputElement | null>;
+  scale: number;
+  setScale: (v: string) => void;
+  dpi: number;
+  setDpi: (v: string) => void;
+  drawingScale: number;
+  setDrawingScale: (v: number) => void;
+  mode: AppMode;
+  setMode: (mode: AppMode) => void;
+  mapImage: string | null;
+  onStartCalibrate: () => void;
+  controls: Control[];
+  legs: Leg[];
+  variants: Variant[];
+  deleteVariant: (id: number) => void;
+  currentDrawing: Point[];
+  selectedLegIndex: number;
+  setSelectedLegIndex: (i: number) => void;
+  onUndoPoint: () => void;
+  onSaveVariant: () => void;
+}
 
 export default function Sidebar({
-  // file
   onLoadMap, onLoadData, onSaveData, fileInputRef, loadDataRef,
-  // settings
   scale, setScale, dpi, setDpi, drawingScale, setDrawingScale,
-  // mode
   mode, setMode, mapImage,
-  // calibrate
   onStartCalibrate,
-  // controls / legs
   controls, legs,
-  // variants
   variants, deleteVariant,
-  // drawing
   currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant,
-}) {
-  return (
-    <div className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-lg z-10 flex-shrink-0">
+}: SidebarProps) {
+  return (      <div className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-lg z-10 shrink-0">
       <div className="p-4 bg-slate-900 text-white flex items-center gap-2">
         <Route className="text-pink-500" />
         <h1 className="font-bold text-lg tracking-wide">2DRerun Clone</h1>

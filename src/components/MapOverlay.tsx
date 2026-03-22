@@ -3,6 +3,19 @@ import {
   BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE
 } from '../constants';
 import { calcPixelDistance } from '../utils/geometry';
+import { Control, Variant, Point } from '../types';
+
+interface MapOverlayProps {
+  svgRef: React.RefObject<SVGSVGElement | null>;
+  zoom: number;
+  controls: Control[];
+  variants: Variant[];
+  currentDrawing: Point[];
+  selectedLegIndex: number | null;
+  calibrationPoints: Point[];
+  draggedControlId: number | null;
+  drawingScale: number;
+}
 
 export default function MapOverlay({
   svgRef,
@@ -14,7 +27,7 @@ export default function MapOverlay({
   calibrationPoints,
   draggedControlId,
   drawingScale,
-}) {
+}: MapOverlayProps) {
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
 
   return (
@@ -118,7 +131,7 @@ export default function MapOverlay({
 
       {/* Route Variants */}
       {variants.map(v => {
-        if (v.legIndex !== selectedLegIndex) return null; // Hide variants not for the current leg
+        if (v.legIndex !== selectedLegIndex) return null;
         return (
           <g key={v.id}>
             <polyline

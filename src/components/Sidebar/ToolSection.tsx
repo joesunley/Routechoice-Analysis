@@ -1,7 +1,14 @@
 import React from 'react';
 import { MapPin, Route } from 'lucide-react';
+import { AppMode } from '../../types';
 
-export default function ToolSection({ mode, setMode, controlsCount }) {
+interface ToolSectionProps {
+  mode: AppMode;
+  setMode: (mode: AppMode) => void;
+  controlsCount: number;
+}
+
+export default function ToolSection({ mode, setMode, controlsCount }: ToolSectionProps) {
   return (
     <section className="space-y-3">
       <div className="flex justify-between items-center">
