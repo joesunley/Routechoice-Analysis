@@ -24,7 +24,7 @@ export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingS
 
       <div className="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-tight">Map Scale (1:X)</label>
+          <label className="block text-[10px] font-bold text-slate-500 mb-2 uppercase tracking-tight">Map Scale</label>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {COMMON_SCALES.map(s => (
               <button
