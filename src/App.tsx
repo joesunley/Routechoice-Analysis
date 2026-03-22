@@ -26,6 +26,8 @@ export default function App() {
   const [dragStart, setDragStart] = useState<PanState>({ x: 0, y: 0 });
   const [mouseDownPos, setMouseDownPos] = useState<PanState>({ x: 0, y: 0 });
 
+  const [showResetConfirmation, setShowResetConfirmation] = useState(false); // State for reset confirmation modal
+
   const svgRef = useRef<SVGSVGElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadDataRef = useRef<HTMLInputElement>(null);
@@ -108,6 +110,24 @@ export default function App() {
       } catch (_) {}
     };
     reader.readAsText(file);
+  };
+
+  // --- Reset Functionality ---
+  const confirmResetCourseData = () => {
+    setShowResetConfirmation(true);
+  };
+
+  const handleResetConfirm = () => {
+    setControls([]);
+    setVariants([]);
+    setCurrentDrawing([]);
+    setCalibrationPoints([]);
+    setMode('controls');
+    setShowResetConfirmation(false);
+  };
+
+  const handleResetCancel = () => {
+    setShowResetConfirmation(false);
   };
 
   // --- Legs (derived) ---
@@ -242,6 +262,7 @@ export default function App() {
         setSelectedLegIndex={setSelectedLegIndex}
         onUndoPoint={undoLastPoint}
         onSaveVariant={handleFinishVariant}
+        resetCourseData={confirmResetCourseData}
       />
 
       <MapWorkspace
@@ -273,6 +294,29 @@ export default function App() {
           onApply={finalizeCalibration}
           onCancel={() => { setShowCalibrationModal(false); setCalibrationPoints([]); }}
         />
+      )}
+
+      {showResetConfirmation && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded shadow-lg text-center">
+            <h2 className="text-lg font-bold mb-4">Confirm Reset</h2>
+            <p className="mb-4">Are you sure you want to reset all course data? This action cannot be undone.</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={handleResetConfirm}
+                className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={handleResetCancel}
+                className="bg-gray-300 py-2 px-4 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -32,6 +32,7 @@ interface SidebarProps {
   setSelectedLegIndex: (i: number) => void;
   onUndoPoint: () => void;
   onSaveVariant: () => void;
+  resetCourseData: () => void;
 }
 
 export default function Sidebar({
@@ -41,9 +42,14 @@ export default function Sidebar({
   onStartCalibrate,
   controls, legs,
   variants, deleteVariant,
-  currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant,
+  currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, resetCourseData,
 }: SidebarProps) {
-  return (      <div className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-lg z-10 shrink-0">
+  const confirmResetCourseData = () => {
+    resetCourseData();
+  };
+
+  return (
+    <div className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-lg z-10 shrink-0">
       <div className="p-4 bg-slate-900 text-white flex items-center gap-2">
         <Route className="text-pink-500" />
         <h1 className="font-bold text-lg tracking-wide">2DRerun Clone</h1>
@@ -100,6 +106,13 @@ export default function Sidebar({
             scale={scale}
           />
         )}
+
+        <button
+          onClick={confirmResetCourseData}
+          className="w-full bg-red-400 text-white py-2 px-4 rounded hover:bg-red-600"
+        >
+          Reset Course Data
+        </button>
       </div>
     </div>
   );
