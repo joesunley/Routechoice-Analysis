@@ -198,7 +198,7 @@ export default function App() {
       // Otherwise try dragging control
       if (tryStartAltDrag(mapX, mapY, zoom)) return;
     }
-    setDragStart({ x: e.clientX - viewportState.current.pan.x, y: e.clientY - viewportState.current.pan.y });
+    setDragStart({ x: e.clientX, y: e.clientY });
     setMouseDownPos({ x: e.clientX, y: e.clientY });
   };
     const handleMouseMove = (e: React.MouseEvent) => {
@@ -218,7 +218,11 @@ export default function App() {
     const hasMoved = isMouseDownRef.current && (mouseDownPos.x !== e.clientX || mouseDownPos.y !== e.clientY);
     if (hasMoved || isDragging) {
       setIsDragging(true);
-      setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+      const currentPan = viewportState.current.pan;
+      const deltaX = e.clientX - dragStart.x;
+      const deltaY = e.clientY - dragStart.y;
+      setPan({ x: currentPan.x + deltaX, y: currentPan.y + deltaY });
+      setDragStart({ x: e.clientX, y: e.clientY });
     }
   };
     const handleMouseUp = (e: React.MouseEvent) => {

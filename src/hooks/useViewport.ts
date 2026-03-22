@@ -7,6 +7,7 @@ export function useViewport(mapDimensions: MapDimensions) {
   const viewportState = useRef({ zoom, pan });
   const workspaceRef = useRef<HTMLDivElement>(null);
 
+  // Synchronize ref with state
   useEffect(() => {
     viewportState.current = { zoom, pan };
   }, [zoom, pan]);
