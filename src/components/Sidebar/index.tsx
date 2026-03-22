@@ -33,6 +33,7 @@ interface SidebarProps {
   setSelectedLegIndex: (i: number) => void;
   onUndoPoint: () => void;
   onSaveVariant: () => void;
+  onUpdateLegNotes: (legIndex: number, notes: string) => void;
   resetCourseData: () => void;
 }
 
@@ -43,7 +44,7 @@ export default function Sidebar({
   onStartCalibrate, onCancelCalibrate,
   controls, legs,
   variants, deleteVariant, editVariant,
-  currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, resetCourseData,
+  currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, onUpdateLegNotes, resetCourseData,
 }: SidebarProps) {
   const confirmResetCourseData = () => {
     resetCourseData();
@@ -105,6 +106,7 @@ export default function Sidebar({
             editVariant={editVariant}
             dpi={dpi}
             scale={scale}
+            onUpdateLegNotes={onUpdateLegNotes}
           />
         )}
 

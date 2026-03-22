@@ -24,6 +24,7 @@ export interface Leg {
   end: Control;
   label: string;
   straightLength: number;
+  notes?: string;
 }
 
 export interface MapDimensions {

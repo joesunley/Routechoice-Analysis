@@ -11,13 +11,12 @@ import { AppMode, MapDimensions, PanState, Point } from './types';
 
 export default function App() {
   const [mapImage, setMapImage] = useState<string | null>(null);
-  const [mapDimensions, setMapDimensions] = useState<MapDimensions>({ width: 0, height: 0 });
-
-  const [scale, setScale] = useState<number>(4000);
+  const [mapDimensions, setMapDimensions] = useState<MapDimensions>({ width: 0, height: 0 });  const [scale, setScale] = useState<number>(4000);
   const [dpi, setDpi] = useState<number>(150);
   const [drawingScale, setDrawingScale] = useState<number>(1.0);
 
   const [mode, setMode] = useState<AppMode>('controls');
+  const [legNotes, setLegNotes] = useState<{ [key: number]: string | undefined }>({});
 
   const [calibrationPoints, setCalibrationPoints] = useState<Point[]>([]);
   const [showCalibrationModal, setShowCalibrationModal] = useState(false);
@@ -84,10 +83,9 @@ export default function App() {
     setCalibrationPoints([]);
     setShowCalibrationModal(false);
   };
-
   // --- Save / Load ---
   const exportData = () => {
-    const data = { scale, dpi, drawingScale, controls, variants };
+    const data = { scale, dpi, drawingScale, controls, variants, legNotes };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -109,6 +107,7 @@ export default function App() {
         if (data.drawingScale) setDrawingScale(data.drawingScale);
         if (data.controls) setControls(data.controls);
         if (data.variants) setVariants(data.variants);
+        if (data.legNotes) setLegNotes(data.legNotes);
       } catch (_) {}
     };
     reader.readAsText(file);
@@ -118,18 +117,25 @@ export default function App() {
   const confirmResetCourseData = () => {
     setShowResetConfirmation(true);
   };
-
   const handleResetConfirm = () => {
     setControls([]);
     setVariants([]);
     setCurrentDrawing([]);
     setCalibrationPoints([]);
+    setLegNotes({});
     setMode('controls');
     setShowResetConfirmation(false);
   };
-
   const handleResetCancel = () => {
     setShowResetConfirmation(false);
+  };
+
+  // --- Leg Notes Handler ---
+  const handleUpdateLegNotes = (legIndex: number, notes: string) => {
+    setLegNotes(prev => ({
+      ...prev,
+      [legIndex]: notes || undefined,
+    }));
   };
 
   // --- Legs (derived) ---
@@ -147,9 +153,10 @@ export default function App() {
         end: p2,
         label: `Leg ${getLabel(i)}-${getLabel(i + 1)}`,
         straightLength: pixelsToMeters(calcPixelDistance(p1, p2), dpi, scale),
+        notes: legNotes[i],
       };
     });
-  }, [controls, dpi, scale]);
+  }, [controls, dpi, scale, legNotes]);
 
   // --- Map Click ---
   const handleShiftClick = (e: React.MouseEvent): boolean => {
@@ -282,8 +289,9 @@ export default function App() {
         setSelectedLegIndex={setSelectedLegIndex}
         onUndoPoint={undoLastPoint}
         onSaveVariant={handleFinishVariant}
+        onUpdateLegNotes={handleUpdateLegNotes}
         resetCourseData={confirmResetCourseData}
-      />      <MapWorkspace
+      /><MapWorkspace
         workspaceRef={workspaceRef}
         mapImage={mapImage}
         mapDimensions={mapDimensions}
