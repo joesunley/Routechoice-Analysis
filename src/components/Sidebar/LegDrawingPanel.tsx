@@ -1,4 +1,3 @@
-import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
 import { Leg, Point } from '../../types';

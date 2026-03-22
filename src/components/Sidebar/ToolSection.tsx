@@ -1,4 +1,3 @@
-import React from 'react';
 import { MapPin, Route } from 'lucide-react';
 import { AppMode } from '../../types';
 

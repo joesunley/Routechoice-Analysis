@@ -1,4 +1,3 @@
-import React from 'react';
 import { handleNumericInput, inputEventGuard } from '../utils/geometry';
 
 interface CalibrationModalProps {

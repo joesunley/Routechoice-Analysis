@@ -1,4 +1,3 @@
-import React from 'react';
 import { Settings, Ruler } from 'lucide-react';
 import { COMMON_SCALES } from '../../constants';
 import { handleNumericInput, inputEventGuard } from '../../utils/geometry';

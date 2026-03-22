@@ -1,4 +1,3 @@
-import React from 'react';
 import { Trash2, Edit2 } from 'lucide-react';
 import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
 import { Leg, Variant, AppMode } from '../../types';
