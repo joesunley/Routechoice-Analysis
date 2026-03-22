@@ -173,6 +173,7 @@ export default function App() {
   };
 
   const handleMouseMove = (e) => {
+    if (mode !== 'controls') return; // Only allow moving in course mode
     if (isAltDragging && draggedControlId !== null) {
       const rect = svgRef.current.getBoundingClientRect();
       moveAltDraggedControl((e.clientX - rect.left) / zoom, (e.clientY - rect.top) / zoom);
