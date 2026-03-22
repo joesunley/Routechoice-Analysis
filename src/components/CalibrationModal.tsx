@@ -28,13 +28,13 @@ export default function CalibrationModal({ value, onChange, onApply, onCancel }:
         <div className="flex flex-col gap-2 mt-4">
           <button
             onClick={onApply}
-            className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all"
+            className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all cursor-pointer"
           >
             Apply Calibration
           </button>
           <button
             onClick={onCancel}
-            className="w-full text-slate-400 font-bold py-2 text-sm hover:text-slate-600"
+            className="w-full text-slate-400 font-bold py-2 text-sm hover:text-slate-600 cursor-pointer"
           >
             Cancel
           </button>

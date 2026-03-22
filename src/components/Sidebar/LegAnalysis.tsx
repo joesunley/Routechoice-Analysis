@@ -60,7 +60,7 @@ export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelec
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); deleteVariant(v.id); }}
-                            className="text-slate-300 hover:text-red-500 p-1 rounded transition-colors opacity-0 group-hover:opacity-100"
+                            className="text-slate-300 hover:text-red-500 p-1 rounded transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                           >
                             <Trash2 size={12} />
                           </button>

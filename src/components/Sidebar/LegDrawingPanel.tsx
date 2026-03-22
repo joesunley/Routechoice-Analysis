@@ -24,7 +24,7 @@ export default function LegDrawingPanel({ legs, selectedLegIndex, setSelectedLeg
         <div className="flex items-center gap-2 bg-white rounded-md border border-blue-200 p-1">
           <button
             onClick={() => setSelectedLegIndex(Math.max(0, selectedLegIndex - 1))}
-            className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 no-drag"
+            className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 no-drag cursor-pointer"
             disabled={selectedLegIndex === 0}
           >
             <ChevronLeft size={16} />
@@ -34,7 +34,7 @@ export default function LegDrawingPanel({ legs, selectedLegIndex, setSelectedLeg
           </div>
           <button
             onClick={() => setSelectedLegIndex(Math.min(legs.length - 1, selectedLegIndex + 1))}
-            className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 no-drag"
+            className="p-1 hover:bg-slate-100 rounded disabled:opacity-30 no-drag cursor-pointer"
             disabled={selectedLegIndex === legs.length - 1}
           >
             <ChevronRight size={16} />
@@ -51,14 +51,14 @@ export default function LegDrawingPanel({ legs, selectedLegIndex, setSelectedLeg
         <button
           onClick={onUndo}
           disabled={currentDrawing.length === 0}
-          className="flex-1 bg-white border border-slate-300 text-slate-700 py-1.5 rounded text-xs font-medium hover:bg-slate-50 disabled:opacity-50 no-drag"
+          className="flex-1 bg-white border border-slate-300 text-slate-700 py-1.5 rounded text-xs font-medium hover:bg-slate-50 disabled:opacity-50 no-drag cursor-pointer"
         >
           Undo
         </button>
         <button
           onClick={onSave}
           disabled={currentDrawing.length < 2}
-          className="flex-1 bg-blue-600 text-white py-1.5 rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50 no-drag"
+          className="flex-1 bg-blue-600 text-white py-1.5 rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50 no-drag cursor-pointer"
         >
           Save
         </button>

@@ -109,7 +109,7 @@ export default function Sidebar({
 
         <button
           onClick={confirmResetCourseData}
-          className="w-full bg-red-400 text-white py-2 px-4 rounded hover:bg-red-600"
+          className="w-full bg-red-400 text-white py-2 px-4 rounded hover:bg-red-600 cursor-pointer"
         >
           Reset Course Data
         </button>

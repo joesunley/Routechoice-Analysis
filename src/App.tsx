@@ -304,13 +304,13 @@ export default function App() {
             <div className="flex justify-center gap-4">
               <button
                 onClick={handleResetConfirm}
-                className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
+                className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 cursor-pointer"
               >
                 Confirm
               </button>
               <button
                 onClick={handleResetCancel}
-                className="bg-gray-300 py-2 px-4 rounded hover:bg-gray-400"
+                className="bg-gray-300 py-2 px-4 rounded hover:bg-gray-400 cursor-pointer"
               >
                 Cancel
               </button>

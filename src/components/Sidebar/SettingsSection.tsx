@@ -30,7 +30,7 @@ export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingS
               <button
                 key={s}
                 onClick={() => setScale(String(s))}
-                className={`px-2 py-1 text-[10px] font-bold rounded border transition-all no-drag ${scale == s ? 'bg-blue-600 border-blue-700 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}
+                className={`px-2 py-1 text-[10px] font-bold rounded border transition-all no-drag cursor-pointer ${scale == s ? 'bg-blue-600 border-blue-700 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}
               >
                 {s / 1000}k
               </button>
@@ -62,7 +62,7 @@ export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingS
         <div className="relative pt-2">
           <button
             onClick={onStartCalibrate}
-            className={`w-full flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg text-xs font-bold border transition-all no-drag ${mode === 'calibrate' ? 'bg-orange-500 border-orange-600 text-white shadow-lg scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-orange-200'}`}
+            className={`w-full flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg text-xs font-bold border transition-all no-drag cursor-pointer ${mode === 'calibrate' ? 'bg-orange-500 border-orange-600 text-white shadow-lg scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-orange-200'}`}
           >
             <div className="flex items-center gap-2">
               <Ruler size={16} />
