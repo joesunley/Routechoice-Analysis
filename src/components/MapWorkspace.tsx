@@ -22,7 +22,9 @@ interface MapWorkspaceProps {
   calibrationPoints: Point[];
   draggedControlId: number | null;
   drawingScale: number;
-  mode: AppMode; // Add mode prop to reflect the current application mode
+  mode: AppMode;
+  draggedVariantId: number | null;
+  isAltDraggingLabel: boolean;
 }
 
 export default function MapWorkspace({
@@ -45,7 +47,9 @@ export default function MapWorkspace({
   draggedControlId,
   drawingScale,
   mode,
-}: MapWorkspaceProps) {  return (
+  draggedVariantId,
+  isAltDraggingLabel,
+}: MapWorkspaceProps) {return (
     <div
       ref={workspaceRef}
       className="flex-1 bg-slate-800 overflow-hidden relative transition-colors"
@@ -81,8 +85,7 @@ export default function MapWorkspace({
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           }}
         >
-          <img src={mapImage} alt="Map" className="absolute inset-0 pointer-events-none select-none" />
-          <MapOverlay
+          <img src={mapImage} alt="Map" className="absolute inset-0 pointer-events-none select-none" />          <MapOverlay
             svgRef={svgRef}
             zoom={zoom}
             controls={controls}
@@ -92,7 +95,9 @@ export default function MapWorkspace({
             calibrationPoints={calibrationPoints}
             draggedControlId={draggedControlId}
             drawingScale={drawingScale}
-            isVariantMode={mode === 'variants'} // Use mode to determine variant mode
+            isVariantMode={mode === 'variants'}
+            draggedVariantId={draggedVariantId}
+            isAltDraggingLabel={isAltDraggingLabel}
           />
         </div>
       )}

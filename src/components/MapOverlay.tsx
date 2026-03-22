@@ -16,6 +16,8 @@ interface MapOverlayProps {
   draggedControlId: number | null;
   drawingScale: number;
   isVariantMode: boolean; // New prop to indicate variant mode
+  draggedVariantId: number | null;
+  isAltDraggingLabel: boolean;
 }
 
 export default function MapOverlay({
@@ -29,6 +31,8 @@ export default function MapOverlay({
   draggedControlId,
   drawingScale,
   isVariantMode,
+  draggedVariantId,
+  isAltDraggingLabel,
 }: MapOverlayProps) {
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
 
@@ -130,13 +134,14 @@ export default function MapOverlay({
             opacity={isDimmed ? 0.3 : 1}
           />
         );
-      })}
-
-      {/* Route Variants */}
+      })}      {/* Route Variants */}
       {variants.map(v => {
         if (v.legIndex !== selectedLegIndex) return null;
+        const midPoint = v.points[Math.floor(v.points.length / 2)];
+        const labelOffset = v.labelOffset || { x: 0, y: 0 };
+        const isBeingDragged = isAltDraggingLabel && draggedVariantId === v.id;
         return (
-          <g key={v.id}>
+          <g key={v.id} opacity={isBeingDragged ? 0.6 : 1}>
             <polyline
               points={v.points.map(p => `${p.x},${p.y}`).join(' ')}
               fill="none"
@@ -146,18 +151,30 @@ export default function MapOverlay({
               opacity={v.legIndex === selectedLegIndex ? 1 : 0.3}
             />
             {v.legIndex === selectedLegIndex && (
-              <text
-                x={v.points[Math.floor(v.points.length / 2)].x}
-                y={v.points[Math.floor(v.points.length / 2)].y}
-                fill={v.color}
-                fontSize={BASE_VARIANT_TEXT_SIZE * drawingScale}
-                fontWeight="bold"
-                stroke="white"
-                strokeWidth={2 * drawingScale}
-                paintOrder="stroke"
-              >
-                {v.name}
-              </text>
+              <>
+                {/* Invisible hit target for easier grabbing */}
+                <circle
+                  cx={midPoint.x + labelOffset.x}
+                  cy={midPoint.y + labelOffset.y}
+                  r={BASE_VARIANT_TEXT_SIZE * drawingScale}
+                  fill="transparent"
+                  pointerEvents="none"
+                />
+                <text
+                  x={midPoint.x + labelOffset.x}
+                  y={midPoint.y + labelOffset.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={v.color}
+                  fontSize={BASE_VARIANT_TEXT_SIZE * drawingScale}
+                  fontWeight="bold"
+                  stroke="white"
+                  strokeWidth={2 * drawingScale}
+                  paintOrder="stroke"
+                >
+                  {v.name}
+                </text>
+              </>
             )}
           </g>
         );

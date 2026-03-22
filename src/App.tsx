@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo } from 'react';
 import { useViewport } from './hooks/useViewport';
 import { useControls } from './hooks/useControls';
 import { useVariants } from './hooks/useVariants';
+import { useVariantLabels } from './hooks/useVariantLabels';
 import { calcPixelDistance, calculateDpiFromPoints, pixelsToMeters } from './utils/geometry';
 import Sidebar from './components/Sidebar/index';
 import MapWorkspace from './components/MapWorkspace';
@@ -31,7 +32,6 @@ export default function App() {
   const svgRef = useRef<SVGSVGElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadDataRef = useRef<HTMLInputElement>(null);
-
   const { zoom, setZoom, pan, setPan, workspaceRef, viewportState } = useViewport(mapDimensions);
   const {
     controls, setControls,
@@ -44,6 +44,10 @@ export default function App() {
     selectedLegIndex, setSelectedLegIndex,
     addDrawingPoint, undoLastPoint, handleFinishVariant, deleteVariant, editVariant,
   } = useVariants();
+  const {
+    isAltDraggingLabel, draggedVariantId,
+    tryStartAltDragLabel, moveAltDraggedLabel, endAltDragLabel,
+  } = useVariantLabels();
 
   // --- Numeric input helpers ---
   const handleSetScale = (v: string) => setScale(Number(v) || scale);
@@ -183,7 +187,6 @@ export default function App() {
       if (newPoints.length === 2) setShowCalibrationModal(true);
     }
   };
-
   // --- Mouse Handlers ---
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.no-drag')) return;
@@ -191,14 +194,24 @@ export default function App() {
     const rect = svgRef.current?.getBoundingClientRect();
     const mapX = rect ? (e.clientX - rect.left) / zoom : 0;
     const mapY = rect ? (e.clientY - rect.top) / zoom : 0;
-    if (e.altKey && tryStartAltDrag(mapX, mapY, zoom)) return;
+    if (e.altKey) {
+      // Try dragging variant label first if in variants mode
+      if (mode === 'variants' && tryStartAltDragLabel(mapX, mapY, zoom, variants, selectedLegIndex)) return;
+      // Otherwise try dragging control
+      if (tryStartAltDrag(mapX, mapY, zoom)) return;
+    }
     setIsDragging(true);
     setDragStart({ x: e.clientX - viewportState.current.pan.x, y: e.clientY - viewportState.current.pan.y });
     setMouseDownPos({ x: e.clientX, y: e.clientY });
   };
-
   const handleMouseMove = (e: React.MouseEvent) => {
     if (mode !== 'controls' && mode !== 'variants') return;
+    if (isAltDraggingLabel && draggedVariantId !== null) {
+      const rect = svgRef.current!.getBoundingClientRect();
+      const updatedVariants = moveAltDraggedLabel((e.clientX - rect.left) / zoom, (e.clientY - rect.top) / zoom, variants);
+      setVariants(updatedVariants);
+      return;
+    }
     if (isAltDragging && draggedControlId !== null) {
       const rect = svgRef.current!.getBoundingClientRect();
       moveAltDraggedControl((e.clientX - rect.left) / zoom, (e.clientY - rect.top) / zoom);
@@ -208,9 +221,12 @@ export default function App() {
       setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
     }
   };
-
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (isAltDragging) { endAltDrag(); return; }
+    if (isAltDraggingLabel || isAltDragging) { 
+      if (isAltDraggingLabel) endAltDragLabel();
+      else endAltDrag();
+      return; 
+    }
     if (!isDragging) return;
     setIsDragging(false);
     const dist = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
@@ -229,14 +245,11 @@ export default function App() {
       if (finalPoints.length >= 2) handleFinishVariant(finalPoints);
       else setCurrentDrawing([]);
     }
-  };
-
-  const getCursor = (): string => {
+  };  const getCursor = (): string => {
+    if (isAltDraggingLabel) return 'grabbing';
     if (isAltDragging) return 'grabbing';
-    if (altKeyPressed) return 'crosshair';
     if (isDragging) return 'grabbing';
-    if (mode === 'calibrate') return 'crosshair';
-    return 'grab';
+    return 'crosshair';
   };
 
   return (
@@ -263,9 +276,7 @@ export default function App() {
         onUndoPoint={undoLastPoint}
         onSaveVariant={handleFinishVariant}
         resetCourseData={confirmResetCourseData}
-      />
-
-      <MapWorkspace
+      />      <MapWorkspace
         workspaceRef={workspaceRef}
         mapImage={mapImage}
         mapDimensions={mapDimensions}
@@ -284,8 +295,10 @@ export default function App() {
         calibrationPoints={calibrationPoints}
         draggedControlId={draggedControlId}
         drawingScale={drawingScale}
-        mode={mode} // Pass mode to MapWorkspace
-      />      {showCalibrationModal && (
+        mode={mode}
+        draggedVariantId={draggedVariantId}
+        isAltDraggingLabel={isAltDraggingLabel}
+      />{showCalibrationModal && (
         <CalibrationModal
           value={tempCalibrationValue}
           onChange={setTempCalibrationValue}

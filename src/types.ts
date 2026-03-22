@@ -15,6 +15,7 @@ export interface Variant {
   points: Point[];
   color: string;
   name: string;
+  labelOffset?: Point; // Position offset for the label
 }
 
 export interface Leg {
