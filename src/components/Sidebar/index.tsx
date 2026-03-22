@@ -52,7 +52,7 @@ export default function Sidebar({
     <div className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-lg z-10 shrink-0">
       <div className="p-4 bg-slate-900 text-white flex items-center gap-2">
         <Route className="text-pink-500" />
-        <h1 className="font-bold text-lg tracking-wide">2DRerun Clone</h1>
+        <h1 className="font-bold text-lg tracking-wide">Routechoice Analysis</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
