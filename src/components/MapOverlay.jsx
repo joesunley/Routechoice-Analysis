@@ -103,43 +103,49 @@ export default function MapOverlay({
         const endMargin = (i === controls.length - 1) ? circleRadius * 1.2 : circleRadius;
         if (dist < startMargin + endMargin) return null;
         const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        const isDimmed = selectedLegIndex !== null && selectedLegIndex !== i - 1;
         return (
           <line
             key={`line-${i}`}
             x1={p1.x + Math.cos(angle) * startMargin} y1={p1.y + Math.sin(angle) * startMargin}
             x2={p2.x - Math.cos(angle) * endMargin} y2={p2.y - Math.sin(angle) * endMargin}
-            stroke="#ec4899" strokeWidth={BASE_LINE_WIDTH * drawingScale}
+            stroke="#ec4899"
+            strokeWidth={BASE_LINE_WIDTH * drawingScale}
+            opacity={isDimmed ? 0.3 : 1}
           />
         );
       })}
 
       {/* Route Variants */}
-      {variants.map(v => (
-        <g key={v.id}>
-          <polyline
-            points={v.points.map(p => `${p.x},${p.y}`).join(' ')}
-            fill="none"
-            stroke={v.color}
-            strokeWidth={BASE_LINE_WIDTH * drawingScale}
-            strokeDasharray={v.legIndex === selectedLegIndex ? 'none' : '10,10'}
-            opacity={v.legIndex === selectedLegIndex ? 1 : 0.3}
-          />
-          {v.legIndex === selectedLegIndex && (
-            <text
-              x={v.points[Math.floor(v.points.length / 2)].x}
-              y={v.points[Math.floor(v.points.length / 2)].y}
-              fill={v.color}
-              fontSize={BASE_VARIANT_TEXT_SIZE * drawingScale}
-              fontWeight="bold"
-              stroke="white"
-              strokeWidth={2 * drawingScale}
-              paintOrder="stroke"
-            >
-              {v.name}
-            </text>
-          )}
-        </g>
-      ))}
+      {variants.map(v => {
+        if (v.legIndex !== selectedLegIndex) return null; // Hide variants not for the current leg
+        return (
+          <g key={v.id}>
+            <polyline
+              points={v.points.map(p => `${p.x},${p.y}`).join(' ')}
+              fill="none"
+              stroke={v.color}
+              strokeWidth={BASE_LINE_WIDTH * drawingScale}
+              strokeDasharray={v.legIndex === selectedLegIndex ? 'none' : '10,10'}
+              opacity={v.legIndex === selectedLegIndex ? 1 : 0.3}
+            />
+            {v.legIndex === selectedLegIndex && (
+              <text
+                x={v.points[Math.floor(v.points.length / 2)].x}
+                y={v.points[Math.floor(v.points.length / 2)].y}
+                fill={v.color}
+                fontSize={BASE_VARIANT_TEXT_SIZE * drawingScale}
+                fontWeight="bold"
+                stroke="white"
+                strokeWidth={2 * drawingScale}
+                paintOrder="stroke"
+              >
+                {v.name}
+              </text>
+            )}
+          </g>
+        );
+      })}
 
       {/* Drawing Preview */}
       {currentDrawing.length > 0 && (
