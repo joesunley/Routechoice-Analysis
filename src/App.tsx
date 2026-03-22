@@ -37,7 +37,8 @@ export default function App() {
     controls, setControls,
     isAltDragging, draggedControlId, altKeyPressed,
     addControl, tryStartAltDrag, moveAltDraggedControl, endAltDrag,
-  } = useControls();  const {
+  } = useControls();  
+  const {
     variants, setVariants,
     currentDrawing, setCurrentDrawing,
     selectedLegIndex, setSelectedLegIndex,
