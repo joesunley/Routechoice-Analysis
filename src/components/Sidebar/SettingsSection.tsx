@@ -45,9 +45,7 @@ export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingS
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-mono no-drag select-text cursor-text pointer-events-auto"
             placeholder="Custom scale..."
           />
-        </div>
-
-        <div>
+        </div>        <div>
           <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-tight">Digital Precision (DPI)</label>
           <input
             type="text"
@@ -57,16 +55,15 @@ export default function SettingsSection({ scale, setScale, dpi, setDpi, drawingS
             onChange={(e) => handleNumericInput(e.target.value, setDpi)}
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-mono no-drag select-text cursor-text pointer-events-auto"
           />
-        </div>
-
-        <div className="relative pt-2">
+          <p className="text-[9px] text-slate-400 mt-1">Adjust manually or use the calibration tool below</p>
+        </div>        <div className="relative pt-2">
           <button
             onClick={onStartCalibrate}
             className={`w-full flex flex-col items-center justify-center gap-1 py-3 px-4 rounded-lg text-xs font-bold border transition-all no-drag cursor-pointer ${mode === 'calibrate' ? 'bg-orange-500 border-orange-600 text-white shadow-lg scale-[1.02]' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-orange-200'}`}
           >
             <div className="flex items-center gap-2">
               <Ruler size={16} />
-              <span>{mode === 'calibrate' ? 'Calibrating...' : 'Calculate DPI'}</span>
+              <span>{mode === 'calibrate' ? 'Calculating...' : 'Calculate DPI'}</span>
             </div>
           </button>
         </div>

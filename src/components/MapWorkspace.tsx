@@ -45,8 +45,7 @@ export default function MapWorkspace({
   draggedControlId,
   drawingScale,
   mode,
-}: MapWorkspaceProps) {
-  return (
+}: MapWorkspaceProps) {  return (
     <div
       ref={workspaceRef}
       className="flex-1 bg-slate-800 overflow-hidden relative transition-colors"
@@ -56,6 +55,14 @@ export default function MapWorkspace({
       onMouseUp={onMouseUp}
       onContextMenu={onContextMenu}
     >
+      {mode === 'calibrate' && mapImage && (
+        <div className="absolute top-0 left-0 right-0 bg-orange-100 border-b-2 border-orange-300 p-4 z-50 no-drag pointer-events-none">
+          <div className="text-sm font-semibold text-orange-900 flex items-center gap-2">
+            <span>📏</span>
+            <span>Click two points on the map to calculate DPI. You'll then enter the distance between them in meters.</span>
+          </div>
+        </div>
+      )}
       {!mapImage && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-8 text-center">
           <Map size={64} className="mb-4 opacity-20" />
