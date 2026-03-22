@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Edit2 } from 'lucide-react';
 import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
 import { Leg, Variant, AppMode } from '../../types';
 
@@ -10,11 +10,12 @@ interface LegAnalysisProps {
   setSelectedLegIndex: (i: number) => void;
   setMode: (mode: AppMode) => void;
   deleteVariant: (id: number) => void;
+  editVariant: (id: number) => void;
   dpi: number;
   scale: number;
 }
 
-export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelectedLegIndex, setMode, deleteVariant, dpi, scale }: LegAnalysisProps) {
+export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelectedLegIndex, setMode, deleteVariant, editVariant, dpi, scale }: LegAnalysisProps) {
   return (
     <section className="space-y-3 text-sm pb-10">
       <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Leg Analysis</h2>
@@ -43,9 +44,7 @@ export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelec
                   (() => {
                     const shortestVariantLen = Math.min(
                       ...legVariants.map(variant => pixelsToMeters(calcTotalPixelDistance(variant.points), dpi, scale))
-                    );
-
-                    return legVariants.map(v => {
+                    );                    return legVariants.map(v => {
                       const actualLen = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
                       const percentExtra = ((actualLen / shortestVariantLen) - 1) * 100;
                       return (
@@ -58,12 +57,22 @@ export default function LegAnalysis({ legs, variants, selectedLegIndex, setSelec
                               (+{percentExtra.toFixed(0)}%)
                             </span>
                           </div>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); deleteVariant(v.id); }}
-                            className="text-slate-300 hover:text-red-500 p-1 rounded transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
-                          >
-                            <Trash2 size={12} />
-                          </button>
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setMode('variants'); editVariant(v.id); }}
+                              className="text-slate-300 hover:text-blue-500 p-1 rounded transition-colors cursor-pointer"
+                              title="Edit variant"
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); deleteVariant(v.id); }}
+                              className="text-slate-300 hover:text-red-500 p-1 rounded transition-colors cursor-pointer"
+                              title="Delete variant"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
                         </div>
                       );
                     });

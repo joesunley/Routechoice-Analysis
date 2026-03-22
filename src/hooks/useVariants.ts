@@ -29,9 +29,17 @@ export function useVariants() {
     });
     setCurrentDrawing([]);
   };
-
   const deleteVariant = (id: number) => {
     setVariants(prev => prev.filter(v => v.id !== id));
+  };
+
+  const editVariant = (id: number) => {
+    const variantToEdit = variants.find(v => v.id === id);
+    if (variantToEdit) {
+      setCurrentDrawing(variantToEdit.points);
+      setSelectedLegIndex(variantToEdit.legIndex);
+      deleteVariant(id);
+    }
   };
 
   return {
@@ -45,5 +53,6 @@ export function useVariants() {
     undoLastPoint,
     handleFinishVariant,
     deleteVariant,
+    editVariant,
   };
 }

@@ -37,12 +37,11 @@ export default function App() {
     controls, setControls,
     isAltDragging, draggedControlId, altKeyPressed,
     addControl, tryStartAltDrag, moveAltDraggedControl, endAltDrag,
-  } = useControls();
-  const {
+  } = useControls();  const {
     variants, setVariants,
     currentDrawing, setCurrentDrawing,
     selectedLegIndex, setSelectedLegIndex,
-    addDrawingPoint, undoLastPoint, handleFinishVariant, deleteVariant,
+    addDrawingPoint, undoLastPoint, handleFinishVariant, deleteVariant, editVariant,
   } = useVariants();
 
   // --- Numeric input helpers ---
@@ -240,8 +239,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 font-sans text-slate-800 overflow-hidden select-none">
-      <Sidebar
+    <div className="flex h-screen w-full bg-slate-50 font-sans text-slate-800 overflow-hidden select-none">      <Sidebar
         onLoadMap={handleImageUpload}
         onLoadData={importData}
         onSaveData={exportData}
@@ -257,6 +255,7 @@ export default function App() {
         legs={legs}
         variants={variants}
         deleteVariant={deleteVariant}
+        editVariant={editVariant}
         currentDrawing={currentDrawing}
         selectedLegIndex={selectedLegIndex}
         setSelectedLegIndex={setSelectedLegIndex}

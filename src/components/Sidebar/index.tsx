@@ -27,6 +27,7 @@ interface SidebarProps {
   legs: Leg[];
   variants: Variant[];
   deleteVariant: (id: number) => void;
+  editVariant: (id: number) => void;
   currentDrawing: Point[];
   selectedLegIndex: number;
   setSelectedLegIndex: (i: number) => void;
@@ -41,7 +42,7 @@ export default function Sidebar({
   mode, setMode, mapImage,
   onStartCalibrate, onCancelCalibrate,
   controls, legs,
-  variants, deleteVariant,
+  variants, deleteVariant, editVariant,
   currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, resetCourseData,
 }: SidebarProps) {
   const confirmResetCourseData = () => {
@@ -101,6 +102,7 @@ export default function Sidebar({
             setSelectedLegIndex={setSelectedLegIndex}
             setMode={setMode}
             deleteVariant={deleteVariant}
+            editVariant={editVariant}
             dpi={dpi}
             scale={scale}
           />
