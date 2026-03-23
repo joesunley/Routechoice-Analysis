@@ -52,7 +52,7 @@ export default function Sidebar({
 
   return (
     <div className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-lg z-10 shrink-0">
-      <div className="p-4 bg-slate-900 text-white flex items-center gap-2">
+      <div className="p-4 bg-slate-900 text-white flex items-center gap-2 w-80">
         <Route className="text-pink-500" />
         <h1 className="font-bold text-lg tracking-wide">Routechoice Analysis</h1>
       </div>
