@@ -20,6 +20,7 @@ interface MapOverlayProps {
   isAltDraggingLabel: boolean;
   dpi?: number;
   scale?: number;
+  editingVariantId: number | null;
 }
 
 export default function MapOverlay({
@@ -37,6 +38,7 @@ export default function MapOverlay({
   isAltDraggingLabel,
   dpi = 150,
   scale = 4000,
+  editingVariantId,
 }: MapOverlayProps) {
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
 
@@ -137,9 +139,9 @@ export default function MapOverlay({
             strokeWidth={BASE_LINE_WIDTH * drawingScale}
             opacity={isDimmed ? 0.3 : 1}
           />
-        );      })}
-
-      {/* Route Variants */}      {isVariantMode && variants.map(v => {
+        );      })}      {/* Route Variants */}      {isVariantMode && variants.map(v => {
+        // Skip rendering the variant that's currently being edited
+        if (v.id === editingVariantId) return null;
         if (v.legIndex !== selectedLegIndex) return null;
         const midPoint = v.points[Math.floor(v.points.length / 2)];
         const labelOffset = v.labelOffset || { x: 0, y: 0 };

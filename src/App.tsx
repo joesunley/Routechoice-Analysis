@@ -35,12 +35,12 @@ export default function App() {
     controls, setControls,
     isAltDragging, draggedControlId,
     addControl, tryStartAltDrag, moveAltDraggedControl, endAltDrag,
-  } = useControls();
-  const {
+  } = useControls();  const {
     variants, setVariants,
     currentDrawing, setCurrentDrawing,
     selectedLegIndex, setSelectedLegIndex,
     addDrawingPoint, undoLastPoint, handleFinishVariant, deleteVariant, editVariant,
+    editingVariantId,
   } = useVariants();
   const {
     isAltDraggingLabel, draggedVariantId,
@@ -292,7 +292,7 @@ export default function App() {
         onSaveVariant={handleFinishVariant}
         onUpdateLegNotes={handleUpdateLegNotes}
         resetCourseData={confirmResetCourseData}
-      /><MapWorkspace
+      />      <MapWorkspace
         workspaceRef={workspaceRef}
         mapImage={mapImage}
         mapDimensions={mapDimensions}
@@ -317,6 +317,7 @@ export default function App() {
         zoomToCenter={zoomToCenter}
         dpi={dpi}
         scale={scale}
+        editingVariantId={editingVariantId}
       />
       {showCalibrationModal && (
         <CalibrationModal
