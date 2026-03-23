@@ -24,7 +24,6 @@ function escapeHtml(str: string): string {
 }
 
 function generateLegSvg(
-  mapImage: string,
   mapDimensions: MapDimensions,
   controls: Control[],
   legVariants: Variant[],
@@ -106,7 +105,7 @@ function generateLegSvg(
   <rect width="${svgW}" height="${svgH}" fill="#1e293b"/>
   <g transform="rotate(${rotDeg},${cx},${cy})">
     <g transform="translate(${pan.x},${pan.y}) scale(${zoom})">
-      <image x="0" y="0" width="${mapDimensions.width}" height="${mapDimensions.height}" href="${mapImage}" preserveAspectRatio="none"/>
+      <image class="map-img" x="0" y="0" width="${mapDimensions.width}" height="${mapDimensions.height}" href="" preserveAspectRatio="none"/>
       ${lineSvg}
       ${startSvg}
       ${endSvg}
@@ -187,7 +186,7 @@ export function exportShareHtml({
   for (let i = 0; i < legs.length; i++) {
     const leg = legs[i];
     const legVariants = variants.filter(v => v.legIndex === leg.index);
-    const mapSvg = generateLegSvg(mapImage, mapDimensions, controls, legVariants, leg.index, dpi, scale, drawingScale, SVG_W, SVG_H);
+    const mapSvg = generateLegSvg(mapDimensions, controls, legVariants, leg.index, dpi, scale, drawingScale, SVG_W, SVG_H);
     const infoHtml = generateInfoPanel(leg, legVariants, dpi, scale);
     slidesHtml += `<div class="slide" id="slide-${i}" style="display:${i === 0 ? 'flex' : 'none'};width:100%;height:100%">
       <div style="flex:1;min-width:0;overflow:hidden">${mapSvg}</div>
@@ -235,6 +234,8 @@ export function exportShareHtml({
     </div>
   </div>
   <script>
+    var MAP_SRC = '${mapImage}';
+    document.querySelectorAll('image.map-img').forEach(function(el) { el.setAttribute('href', MAP_SRC); });
     var current = 0;
     var total = ${legs.length};
     var titles = ${JSON.stringify(legs.map(l => l.label))};
