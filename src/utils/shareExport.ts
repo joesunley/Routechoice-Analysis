@@ -101,7 +101,7 @@ function generateLegSvg(
     }
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgW}" height="${svgH}" style="display:block;width:100%;height:100%">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" style="display:block;width:100%;height:100%">
   <rect width="${svgW}" height="${svgH}" fill="#1e293b"/>
   <g transform="rotate(${rotDeg},${cx},${cy})">
     <g transform="translate(${pan.x},${pan.y}) scale(${zoom})">
@@ -188,9 +188,9 @@ export function exportShareHtml({
     const legVariants = variants.filter(v => v.legIndex === leg.index);
     const mapSvg = generateLegSvg(mapDimensions, controls, legVariants, leg.index, dpi, scale, drawingScale, SVG_W, SVG_H);
     const infoHtml = generateInfoPanel(leg, legVariants, dpi, scale);
-    slidesHtml += `<div class="slide" id="slide-${i}" style="display:${i === 0 ? 'flex' : 'none'};width:100%;height:100%">
-      <div style="flex:1;min-width:0;overflow:hidden">${mapSvg}</div>
-      <div style="width:380px;border-left:1px solid #334155;background:#1e293b;overflow-y:auto;color:white;flex-shrink:0">${infoHtml}</div>
+    slidesHtml += `<div class="slide" id="slide-${i}"${i === 0 ? ' style="display:flex"' : ''}>
+      <div class="map-panel">${mapSvg}</div>
+      <div class="info-panel">${infoHtml}</div>
     </div>`;
   }
 
@@ -209,27 +209,46 @@ export function exportShareHtml({
   <title>Routechoice Analysis</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: white; height: 100vh; overflow: hidden; }
-    .container { display: flex; flex-direction: column; height: 100vh; max-width: 1200px; margin: 0 auto; }
-    .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #0f172a; border-bottom: 1px solid #334155; flex-shrink: 0; }
-    .slides { flex: 1; overflow: hidden; position: relative; }
-    .footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #0f172a; border-top: 1px solid #334155; flex-shrink: 0; }
-    .nav-btn { background: transparent; color: white; border: 1px solid #475569; border-radius: 6px; padding: 6px 14px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    body { background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: white; height: 100dvh; overflow: hidden; }
+    .container { display: flex; flex-direction: column; height: 100dvh; max-width: 1200px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #0f172a; border-bottom: 1px solid #334155; flex-shrink: 0; gap: 8px; }
+    .header-logo { color: #f472b6; font-weight: bold; font-size: 16px; white-space: nowrap; }
+    .header-title { font-size: 18px; font-weight: bold; text-align: center; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .header-count { color: #64748b; font-size: 13px; white-space: nowrap; }
+    .slides { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+    .slide { display: none; width: 100%; height: 100%; flex-direction: row; }
+    .map-panel { flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
+    .info-panel { width: clamp(200px, 32%, 380px); border-left: 1px solid #334155; background: #1e293b; overflow-y: auto; color: white; flex-shrink: 1; min-width: 0; }
+    .footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; background: #0f172a; border-top: 1px solid #334155; flex-shrink: 0; }
+    #dots { display: flex; gap: 6px; align-items: center; flex: 1; justify-content: center; overflow-x: auto; flex-wrap: wrap; padding: 2px 0; }
+    .nav-btn { background: transparent; color: white; border: 1px solid #475569; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: 14px; font-weight: 600; white-space: nowrap; flex-shrink: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
     .nav-btn:hover:not(:disabled) { background: #334155; }
     .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    @media (max-width: 600px) {
+      .header-logo { display: none; }
+      .header-count { display: none; }
+      .header-title { font-size: 15px; }
+      .slide { flex-direction: column; }
+      .info-panel { width: 100%; border-left: none; border-top: 1px solid #334155; max-height: 40dvh; flex-shrink: 0; min-width: unset; }
+      .map-panel { flex: 1; min-height: 0; }
+      .nav-btn { padding: 8px 10px; font-size: 13px; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <span style="color:#f472b6;font-weight:bold;font-size:16px">&#9971; Routechoice Analysis</span>
-      <span id="slide-title" style="font-size:18px;font-weight:bold">${escapeHtml(legs[0]?.label ?? '')}</span>
-      <span style="color:#64748b;font-size:13px">${legs.length} leg${legs.length !== 1 ? 's' : ''}</span>
+      <span class="header-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f6339a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
+        <span style="color:white">  Routechoice Analysis</span>
+        </span>
+      <span class="header-title" id="slide-title">${escapeHtml(legs[0]?.label ?? '')}</span>
+      <span class="header-count">${legs.length} leg${legs.length !== 1 ? 's' : ''}</span>
     </div>
     <div class="slides">${slidesHtml}</div>
     <div class="footer">
       <button class="nav-btn" id="prev-btn" onclick="prev()" disabled>&#8592; Prev</button>
-      <div style="display:flex;gap:6px;align-items:center" id="dots">${dotsHtml}</div>
+      <div id="dots">${dotsHtml}</div>
       <button class="nav-btn" id="next-btn" onclick="next()"${legs.length <= 1 ? ' disabled' : ''}>Next &#8594;</button>
     </div>
   </div>
@@ -260,6 +279,13 @@ export function exportShareHtml({
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
       else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
     });
+    var _touchX = 0;
+    document.addEventListener('touchstart', function(e) { _touchX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+      var dx = e.changedTouches[0].clientX - _touchX;
+      if (dx > 50) prev();
+      else if (dx < -50) next();
+    }, { passive: true });
   </script>
 </body>
 </html>`;
