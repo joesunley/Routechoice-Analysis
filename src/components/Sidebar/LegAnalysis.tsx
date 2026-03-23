@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Edit2, FileText } from 'lucide-react';
+import { Trash2, Edit2, FileText, Check, Share2 } from 'lucide-react';
 import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
 import { Leg, Variant, AppMode } from '../../types';
 import LegNotesModal from '../LegNotesModal';
@@ -15,6 +15,8 @@ interface LegAnalysisProps {
   dpi: number;
   scale: number;
   onUpdateLegNotes: (legIndex: number, notes: string) => void;
+  onSelectVariant: (variantId: number) => void;
+  onOpenShare: () => void;
 }
 
 export default function LegAnalysis({ 
@@ -27,7 +29,9 @@ export default function LegAnalysis({
   editVariant, 
   dpi, 
   scale, 
-  onUpdateLegNotes 
+  onUpdateLegNotes,
+  onSelectVariant,
+  onOpenShare
 }: LegAnalysisProps) {
   const [notesModalOpen, setNotesModalOpen] = useState(false);
   const [selectedLegForNotes, setSelectedLegForNotes] = useState<number | null>(null);
@@ -48,7 +52,17 @@ export default function LegAnalysis({
   return (
     <>
       <section className="space-y-3 text-sm pb-10">
-        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Leg Analysis</h2>
+        <div className="flex items-center">
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Leg Analysis</h2>
+          <button
+            onClick={onOpenShare}
+            className="ml-auto flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-blue-500 transition-colors cursor-pointer px-2 py-1 rounded hover:bg-blue-50"
+            title="Open share view"
+          >
+            <Share2 size={13} />
+            Share
+          </button>
+        </div>
         <div className="space-y-3">
           {legs.map(leg => {
             const legVariants = variants.filter(v => v.legIndex === leg.index);
@@ -86,11 +100,18 @@ export default function LegAnalysis({
                         const actualLen = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
                         const percentExtra = ((actualLen / shortestVariantLen) - 1) * 100;
                         return (
-                          <div key={v.id} className="flex items-center justify-between group bg-slate-50 rounded-lg px-2 py-1.5 border border-slate-100">
-                            <div className="flex items-center gap-2 overflow-hidden">
+                          <div key={v.id} className="flex items-center justify-between group bg-slate-50 rounded-lg px-2 py-1.5 border-2 border-slate-200">
+                            <div className="flex items-center gap-1 overflow-hidden">
                               <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: v.color }} />
                               <span className="text-xs font-bold w-4">{v.name}</span>
-                              <span className="text-xs font-mono font-medium truncate">{actualLen.toFixed(0)}m</span>
+                              <button
+                                onClick={() => onSelectVariant(v.id)}
+                                className={`w-3 h-3 p-0 shrink-0 rounded border transition-colors flex items-center justify-center cursor-pointer ${v.chosen === true ? 'text-green-600 border-green-600' : 'border-slate-400'}`}
+                                title="Mark as chosen variant"
+                              >
+                                {v.chosen === true && <Check size={10} />}
+                              </button>
+                              <span className="text-xs font-mono font-medium ml-2">{actualLen.toFixed(0)}m</span>
                               <span className={`text-[10px] font-bold ${percentExtra > 10 ? 'text-orange-500' : 'text-slate-400'}`}>
                                 (+{percentExtra.toFixed(0)}%)
                               </span>

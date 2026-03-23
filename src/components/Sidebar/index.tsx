@@ -28,6 +28,7 @@ interface SidebarProps {
   variants: Variant[];
   deleteVariant: (id: number) => void;
   editVariant: (id: number) => void;
+  selectVariant: (id: number) => void;
   currentDrawing: Point[];
   selectedLegIndex: number;
   setSelectedLegIndex: (i: number) => void;
@@ -37,6 +38,7 @@ interface SidebarProps {
   resetCourseData: () => void;
   autoRotate: boolean;
   onToggleAutoRotate: () => void;
+  onOpenShare: () => void;
 }
 
 export default function Sidebar({
@@ -45,9 +47,9 @@ export default function Sidebar({
   mode, setMode, mapImage,
   onStartCalibrate, onCancelCalibrate,
   controls, legs,
-  variants, deleteVariant, editVariant,
+  variants, deleteVariant, editVariant, selectVariant,
   currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, onUpdateLegNotes, resetCourseData,
-  autoRotate, onToggleAutoRotate,
+  autoRotate, onToggleAutoRotate, onOpenShare,
 }: SidebarProps) {
   const confirmResetCourseData = () => {
     resetCourseData();
@@ -112,6 +114,8 @@ export default function Sidebar({
             dpi={dpi}
             scale={scale}
             onUpdateLegNotes={onUpdateLegNotes}
+            onSelectVariant={selectVariant}
+            onOpenShare={onOpenShare}
           />
         )}
 

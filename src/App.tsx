@@ -8,6 +8,7 @@ import Sidebar from './components/Sidebar/index';
 import MapWorkspace from './components/MapWorkspace';
 import CalibrationModal from './components/CalibrationModal';
 import BaseModal from './components/BaseModal';
+import ShareView from './components/ShareView';
 import { AppMode, MapDimensions, PanState, Point } from './types';
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
   const isMouseDownRef = useRef(false);
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
+  const [showShareView, setShowShareView] = useState(false);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -207,6 +209,22 @@ export default function App() {
     }));
   };
 
+  // --- Variant Selection Handler ---
+  const handleSelectVariant = (variantId: number) => {
+    setVariants(prev => {
+      const variant = prev.find(v => v.id === variantId);
+      if (!variant) return prev;
+      
+      // If already chosen, uncheck it. Otherwise, mark it and uncheck others in the same leg
+      const isCurrentlyChosen = variant.chosen === true;
+      return prev.map(v =>
+        v.legIndex === variant.legIndex
+          ? { ...v, chosen: isCurrentlyChosen ? false : v.id === variantId }
+          : v
+      );
+    });
+  };
+
   // --- Legs (derived) ---
   const legs = useMemo(() => {
     return controls.slice(0, -1).map((p1, i) => {
@@ -368,7 +386,8 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-50 font-sans text-slate-800 overflow-hidden select-none">      <Sidebar
+    <div className="flex h-screen w-full bg-slate-50 font-sans text-slate-800 overflow-hidden select-none">      
+    <Sidebar
         onLoadMap={handleImageUpload}
         onLoadData={importData}
         onSaveData={exportData}
@@ -385,6 +404,8 @@ export default function App() {
         variants={variants}
         deleteVariant={deleteVariant}
         editVariant={editVariant}
+        selectVariant={handleSelectVariant}
+        onOpenShare={() => setShowShareView(true)}
         currentDrawing={currentDrawing}
         selectedLegIndex={selectedLegIndex}
         setSelectedLegIndex={handleSetSelectedLegIndex}
@@ -454,6 +475,19 @@ export default function App() {
         >
           <p className="text-slate-600">Are you sure you want to reset all course data? This action cannot be undone.</p>
         </BaseModal>
+      )}
+      {showShareView && mapImage && (
+        <ShareView
+          mapImage={mapImage}
+          mapDimensions={mapDimensions}
+          controls={controls}
+          legs={legs}
+          variants={variants}
+          dpi={dpi}
+          scale={scale}
+          drawingScale={drawingScale}
+          onClose={() => setShowShareView(false)}
+        />
       )}
     </div>
   );

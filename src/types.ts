@@ -16,6 +16,7 @@ export interface Variant {
   color: string;
   name: string;
   labelOffset?: Point; // Position offset for the label
+  chosen?: boolean; // Whether this is the chosen variant for this leg
 }
 
 export interface Leg {
