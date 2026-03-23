@@ -23,6 +23,66 @@ interface MapOverlayProps {
   editingVariantId: number | null;
 }
 
+/**
+ * Calculates the best position for a control label by checking adjacent controls
+ * and returning the quadrant (offset) that least interferes with the course
+ */
+function calculateLabelPosition(
+  controlIndex: number,
+  control: Control,
+  controls: Control[],
+  radius: number
+): { x: number; y: number } {
+  // Quadrants: [top-left, top-right, bottom-right, bottom-left]
+  // Using 1.5x radius to ensure sufficient distance from circle
+  const offset = radius * 1.5;
+  const quadrants = [
+    { x: -offset, y: -offset }, // top-left
+    { x: offset, y: -offset },  // top-right
+    { x: offset, y: offset },   // bottom-right
+    { x: -offset, y: offset },  // bottom-left
+  ];
+
+  // If it's the start or end, default to top-right
+  if (controlIndex === 0 || controlIndex === controls.length - 1) {
+    return quadrants[1]; // top-right
+  }
+
+  const prevControl = controls[controlIndex - 1];
+  const nextControl = controls[controlIndex + 1];
+
+  // Calculate angles to adjacent controls
+  const angleToPrev = Math.atan2(prevControl.y - control.y, prevControl.x - control.x);
+  const angleToNext = Math.atan2(nextControl.y - control.y, nextControl.x - control.x);
+
+  // Score each quadrant based on how far it is from adjacent controls
+  let bestQuadrant = 1; // default to top-right
+  let bestScore = -Infinity;
+
+  quadrants.forEach((quad, i) => {
+    const quadAngle = Math.atan2(quad.y, quad.x);
+    
+    // Calculate angular distance to the nearest adjacent control
+    let minAngularDistance = Math.PI * 2;
+    
+    const angleDiffToPrev = Math.abs(angleToPrev - quadAngle);
+    const normalizedDiffPrev = Math.min(angleDiffToPrev, Math.PI * 2 - angleDiffToPrev);
+    minAngularDistance = Math.min(minAngularDistance, normalizedDiffPrev);
+    
+    const angleDiffToNext = Math.abs(angleToNext - quadAngle);
+    const normalizedDiffNext = Math.min(angleDiffToNext, Math.PI * 2 - angleDiffToNext);
+    minAngularDistance = Math.min(minAngularDistance, normalizedDiffNext);
+    
+    // Prefer quadrants that are furthest from both adjacent controls
+    if (minAngularDistance > bestScore) {
+      bestScore = minAngularDistance;
+      bestQuadrant = i;
+    }
+  });
+
+  return quadrants[bestQuadrant];
+}
+
 export default function MapOverlay({
   svgRef,
   zoom,
@@ -84,11 +144,6 @@ export default function MapOverlay({
                 strokeWidth={BASE_LINE_WIDTH * drawingScale}
                 transform={`translate(${c.x}, ${c.y}) rotate(${rotation})`}
               />
-              <text
-                x={c.x + size} y={c.y - size}
-                fill="#ec4899" fontSize={BASE_TEXT_SIZE * drawingScale} fontWeight="bold"
-                stroke="white" strokeWidth={4 * drawingScale} paintOrder="stroke"
-              >S</text>
             </g>
           );
         }
@@ -98,11 +153,6 @@ export default function MapOverlay({
             <g key={c.id} opacity={isDimmed ? 0.3 : isBeingDragged ? 0.6 : 1}>
               <circle cx={c.x} cy={c.y} r={circleRadius * 0.7} fill="none" stroke="#ec4899" strokeWidth={BASE_LINE_WIDTH * drawingScale} />
               <circle cx={c.x} cy={c.y} r={circleRadius * 1.1} fill="none" stroke="#ec4899" strokeWidth={BASE_LINE_WIDTH * drawingScale} />
-              <text
-                x={c.x + circleRadius * 1.1} y={c.y - circleRadius * 1.1}
-                fill="#ec4899" fontSize={BASE_TEXT_SIZE * drawingScale} fontWeight="bold"
-                stroke="white" strokeWidth={4 * drawingScale} paintOrder="stroke"
-              >F</text>
             </g>
           );
         }
@@ -110,11 +160,17 @@ export default function MapOverlay({
         return (
           <g key={c.id} opacity={isDimmed ? 0.3 : isBeingDragged ? 0.6 : 1}>
             <circle cx={c.x} cy={c.y} r={circleRadius} fill="none" stroke="#ec4899" strokeWidth={BASE_LINE_WIDTH * drawingScale} />
-            <text
-              x={c.x + circleRadius} y={c.y - circleRadius}
-              fill="#ec4899" fontSize={BASE_TEXT_SIZE * drawingScale} fontWeight="bold"
-              stroke="white" strokeWidth={4 * drawingScale} paintOrder="stroke"
-            >{i}</text>
+            {(() => {
+              const labelPos = calculateLabelPosition(i, c, controls, circleRadius);
+              return (
+                <text
+                  x={c.x + labelPos.x} y={c.y + labelPos.y}
+                  fill="#ec4899" fontSize={BASE_TEXT_SIZE * drawingScale} fontWeight="bold"
+                  stroke="white" strokeWidth={4 * drawingScale} paintOrder="stroke"
+                  textAnchor="middle" dominantBaseline="middle"
+                >{i}</text>
+              );
+            })()}
           </g>
         );
       })}
