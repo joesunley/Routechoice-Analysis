@@ -30,6 +30,7 @@ interface MapWorkspaceProps {
   dpi: number;
   scale: number;
   editingVariantId: number | null;
+  mapRotation: number;
 }
 
 export default function MapWorkspace({
@@ -59,6 +60,7 @@ export default function MapWorkspace({
   dpi,
   scale,
   editingVariantId,
+  mapRotation,
 }: MapWorkspaceProps) {return (
     <div
       ref={workspaceRef}
@@ -86,6 +88,10 @@ export default function MapWorkspace({
         </div>
       )}      {mapImage && (
         <div
+          className="absolute inset-0"
+          style={mapRotation !== 0 ? { transform: `rotate(${mapRotation}deg)`, transformOrigin: 'center center' } : undefined}
+        >
+        <div
           className="absolute top-0 left-0 bg-white origin-top-left shadow-2xl"
           style={{
             width: mapDimensions.width,
@@ -110,6 +116,7 @@ export default function MapWorkspace({
             scale={scale}
             editingVariantId={editingVariantId}
           />
+        </div>
         </div>
       )}      {/* Floating Zoom Controls */}
       {mapImage && (

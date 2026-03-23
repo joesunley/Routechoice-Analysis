@@ -27,6 +27,7 @@ export default function App() {
   const [mouseDownPos, setMouseDownPos] = useState<PanState>({ x: 0, y: 0 });
   const isMouseDownRef = useRef(false);
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
+  const [autoRotate, setAutoRotate] = useState(false);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,9 +48,74 @@ export default function App() {
     tryStartAltDragLabel, moveAltDraggedLabel, endAltDragLabel,
   } = useVariantLabels();
 
+  const mapRotation = useMemo(() => {
+    if (!autoRotate || mode !== 'variants' || selectedLegIndex < 0 || selectedLegIndex >= controls.length - 1) return 0;
+    const c1 = controls[selectedLegIndex];
+    const c2 = controls[selectedLegIndex + 1];
+    const dx = c2.x - c1.x;
+    const dy = c2.y - c1.y;
+    return -(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
+  }, [autoRotate, mode, selectedLegIndex, controls]);
+
   // --- Numeric input helpers ---
   const handleSetScale = (v: string) => setScale(Number(v) || scale);
   const handleSetDpi = (v: string) => setDpi(Number(v) || dpi);
+
+  const zoomToLeg = (legIdx: number) => {
+    const workspace = workspaceRef.current;
+    if (!workspace || legIdx < 0 || legIdx >= controls.length - 1) return;
+    const rect = workspace.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+
+    const c1 = controls[legIdx];
+    const c2 = controls[legIdx + 1];
+    // Compute the rotation that will be applied for this leg
+    const rotDeg = -(Math.atan2(c2.y - c1.y, c2.x - c1.x) * (180 / Math.PI) + 90);
+    const theta = rotDeg * Math.PI / 180;
+
+    // Gather controls + all variant points for this leg
+    const legVariants = variants.filter(v => v.legIndex === legIdx);
+    const allPoints = [c1, c2, ...legVariants.flatMap(v => v.points)];
+
+    // Centroid of all points (this will be centered on screen)
+    const midX = allPoints.reduce((s, p) => s + p.x, 0) / allPoints.length;
+    const midY = allPoints.reduce((s, p) => s + p.y, 0) / allPoints.length;
+
+    // Maximum extents in rotated screen space (for fitting zoom)
+    const padding = 140;
+    let maxRx = 0;
+    let maxRy = 0;
+    for (const p of allPoints) {
+      const dx = p.x - midX;
+      const dy = p.y - midY;
+      const rx = Math.abs(dx * Math.cos(theta) - dy * Math.sin(theta));
+      const ry = Math.abs(dx * Math.sin(theta) + dy * Math.cos(theta));
+      if (rx > maxRx) maxRx = rx;
+      if (ry > maxRy) maxRy = ry;
+    }
+
+    const fitZoomX = maxRx > 0 ? (cx - padding) / maxRx : 50;
+    const fitZoomY = maxRy > 0 ? (cy - padding) / maxRy : 50;
+    const newZoom = Math.max(0.01, Math.min(Math.min(fitZoomX, fitZoomY), 50));
+
+    setZoom(newZoom);
+    setPan({
+      x: cx - midX * newZoom,
+      y: cy - midY * newZoom,
+    });
+  };
+
+  const handleToggleAutoRotate = () => {
+    const next = !autoRotate;
+    setAutoRotate(next);
+    if (next) zoomToLeg(selectedLegIndex);
+  };
+
+  const handleSetSelectedLegIndex = (i: number) => {
+    setSelectedLegIndex(i);
+    if (autoRotate) zoomToLeg(i);
+  };
 
   // --- Map Loading ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,6 +225,27 @@ export default function App() {
     });
   }, [controls, dpi, scale, legNotes]);
 
+  const screenToImageCoords = (clientX: number, clientY: number): { x: number; y: number } => {
+    const workspace = workspaceRef.current;
+    if (!workspace) return { x: 0, y: 0 };
+    const rect = workspace.getBoundingClientRect();
+    let wx = clientX - rect.left;
+    let wy = clientY - rect.top;
+    if (mapRotation !== 0) {
+      const theta = mapRotation * Math.PI / 180;
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const relX = wx - cx;
+      const relY = wy - cy;
+      wx = relX * Math.cos(theta) + relY * Math.sin(theta) + cx;
+      wy = -relX * Math.sin(theta) + relY * Math.cos(theta) + cy;
+    }
+    return {
+      x: (wx - pan.x) / zoom,
+      y: (wy - pan.y) / zoom,
+    };
+  };
+
   // --- Map Click ---
   const handleShiftClick = (e: React.MouseEvent): boolean => {
     if (e.shiftKey) {
@@ -174,12 +261,10 @@ export default function App() {
   };
 
   const handleMapClick = (e: React.MouseEvent) => {
-    if (!svgRef.current || !mapImage || showCalibrationModal || e.altKey) return;
+    if (!mapImage || showCalibrationModal || e.altKey) return;
     if (handleShiftClick(e)) return;
 
-    const rect = svgRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoom;
-    const y = (e.clientY - rect.top) / zoom;
+    const { x, y } = screenToImageCoords(e.clientX, e.clientY);
     if (x < 0 || x > mapDimensions.width || y < 0 || y > mapDimensions.height) return;
 
     if (mode === 'controls') {
@@ -197,9 +282,7 @@ export default function App() {
     if ((e.target as HTMLElement).closest('.no-drag')) return;
     if (e.button !== 0) return;
     isMouseDownRef.current = true;
-    const rect = svgRef.current?.getBoundingClientRect();
-    const mapX = rect ? (e.clientX - rect.left) / zoom : 0;
-    const mapY = rect ? (e.clientY - rect.top) / zoom : 0;
+    const { x: mapX, y: mapY } = screenToImageCoords(e.clientX, e.clientY);
     if (e.altKey) {
       // Try dragging variant label first if in variants mode
       if (mode === 'variants' && tryStartAltDragLabel(mapX, mapY, zoom, variants, selectedLegIndex)) return;
@@ -212,14 +295,14 @@ export default function App() {
     const handleMouseMove = (e: React.MouseEvent) => {
     if (mode !== 'controls' && mode !== 'variants') return;
     if (isAltDraggingLabel && draggedVariantId !== null) {
-      const rect = svgRef.current!.getBoundingClientRect();
-      const updatedVariants = moveAltDraggedLabel((e.clientX - rect.left) / zoom, (e.clientY - rect.top) / zoom, variants);
+      const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+      const updatedVariants = moveAltDraggedLabel(imgX, imgY, variants);
       setVariants(updatedVariants);
       return;
     }
     if (isAltDragging && draggedControlId !== null) {
-      const rect = svgRef.current!.getBoundingClientRect();
-      moveAltDraggedControl((e.clientX - rect.left) / zoom, (e.clientY - rect.top) / zoom);
+      const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+      moveAltDraggedControl(imgX, imgY);
       return;
     }
     // Check if mouse has moved and we should start dragging
@@ -229,7 +312,15 @@ export default function App() {
       const currentPan = viewportState.current.pan;
       const deltaX = e.clientX - dragStart.x;
       const deltaY = e.clientY - dragStart.y;
-      setPan({ x: currentPan.x + deltaX, y: currentPan.y + deltaY });
+      if (mapRotation !== 0) {
+        const theta = mapRotation * Math.PI / 180;
+        setPan({
+          x: currentPan.x + deltaX * Math.cos(theta) + deltaY * Math.sin(theta),
+          y: currentPan.y - deltaX * Math.sin(theta) + deltaY * Math.cos(theta),
+        });
+      } else {
+        setPan({ x: currentPan.x + deltaX, y: currentPan.y + deltaY });
+      }
       setDragStart({ x: e.clientX, y: e.clientY });
     }
   };
@@ -251,9 +342,7 @@ export default function App() {
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     if (mode === 'variants' && currentDrawing.length >= 1) {
-      const rect = svgRef.current!.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / zoom;
-      const y = (e.clientY - rect.top) / zoom;
+      const { x, y } = screenToImageCoords(e.clientX, e.clientY);
       const last = currentDrawing[currentDrawing.length - 1];
       const dist = calcPixelDistance(last, { x, y });
       const finalPoints = dist > 10 ? [...currentDrawing, { x, y }] : currentDrawing;
@@ -287,11 +376,13 @@ export default function App() {
         editVariant={editVariant}
         currentDrawing={currentDrawing}
         selectedLegIndex={selectedLegIndex}
-        setSelectedLegIndex={setSelectedLegIndex}
+        setSelectedLegIndex={handleSetSelectedLegIndex}
         onUndoPoint={undoLastPoint}
         onSaveVariant={handleFinishVariant}
         onUpdateLegNotes={handleUpdateLegNotes}
         resetCourseData={confirmResetCourseData}
+        autoRotate={autoRotate}
+        onToggleAutoRotate={handleToggleAutoRotate}
       />      <MapWorkspace
         workspaceRef={workspaceRef}
         mapImage={mapImage}
@@ -318,6 +409,7 @@ export default function App() {
         dpi={dpi}
         scale={scale}
         editingVariantId={editingVariantId}
+        mapRotation={mapRotation}
       />
       {showCalibrationModal && (
         <CalibrationModal

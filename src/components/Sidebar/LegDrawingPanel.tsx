@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
 import { Leg, Point } from '../../types';
 
@@ -11,9 +11,11 @@ interface LegDrawingPanelProps {
   onSave: () => void;
   dpi: number;
   scale: number;
+  autoRotate: boolean;
+  onToggleAutoRotate: () => void;
 }
 
-export default function LegDrawingPanel({ legs, selectedLegIndex, setSelectedLegIndex, currentDrawing, onUndo, onSave, dpi, scale }: LegDrawingPanelProps) {
+export default function LegDrawingPanel({ legs, selectedLegIndex, setSelectedLegIndex, currentDrawing, onUndo, onSave, dpi, scale, autoRotate, onToggleAutoRotate }: LegDrawingPanelProps) {
   const drawingLength = pixelsToMeters(calcTotalPixelDistance(currentDrawing), dpi, scale);
 
   return (
@@ -60,6 +62,20 @@ export default function LegDrawingPanel({ legs, selectedLegIndex, setSelectedLeg
           className="flex-1 bg-blue-600 text-white py-1.5 rounded text-xs font-medium hover:bg-blue-700 disabled:opacity-50 no-drag cursor-pointer"
         >
           Save
+        </button>
+      </div>
+
+      <div className="border-t border-blue-100 pt-2">
+        <button
+          onClick={onToggleAutoRotate}
+          className={`w-full flex items-center justify-center gap-2 py-1.5 rounded text-xs font-medium border transition-all no-drag cursor-pointer ${
+            autoRotate
+              ? 'bg-blue-600 text-white border-blue-700'
+              : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <RotateCcw size={12} />
+          {autoRotate ? 'Leg Aligned' : 'Align Leg'}
         </button>
       </div>
     </section>

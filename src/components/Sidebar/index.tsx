@@ -35,6 +35,8 @@ interface SidebarProps {
   onSaveVariant: () => void;
   onUpdateLegNotes: (legIndex: number, notes: string) => void;
   resetCourseData: () => void;
+  autoRotate: boolean;
+  onToggleAutoRotate: () => void;
 }
 
 export default function Sidebar({
@@ -45,6 +47,7 @@ export default function Sidebar({
   controls, legs,
   variants, deleteVariant, editVariant,
   currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, onUpdateLegNotes, resetCourseData,
+  autoRotate, onToggleAutoRotate,
 }: SidebarProps) {
   const confirmResetCourseData = () => {
     resetCourseData();
@@ -92,6 +95,8 @@ export default function Sidebar({
             onSave={onSaveVariant}
             dpi={dpi}
             scale={scale}
+            autoRotate={autoRotate}
+            onToggleAutoRotate={onToggleAutoRotate}
           />
         )}
 
