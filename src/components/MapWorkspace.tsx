@@ -99,7 +99,8 @@ export default function MapWorkspace({
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           }}
         >
-          <img src={mapImage} alt="Map" className="absolute inset-0 pointer-events-none select-none" />          <MapOverlay
+          <img src={mapImage} alt="Map" className="absolute inset-0 pointer-events-none select-none" />          
+          <MapOverlay
             svgRef={svgRef}
             zoom={zoom}
             controls={controls}
@@ -115,6 +116,7 @@ export default function MapWorkspace({
             dpi={dpi}
             scale={scale}
             editingVariantId={editingVariantId}
+            mapRotation={mapRotation} // Pass mapRotation here
           />
         </div>
         </div>

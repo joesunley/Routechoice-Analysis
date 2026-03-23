@@ -415,12 +415,12 @@ export default function App() {
         mode={mode}
         draggedVariantId={draggedVariantId}
         isAltDraggingLabel={isAltDraggingLabel}
-        resetZoom={resetZoom}
-        zoomToCenter={zoomToCenter}
         dpi={dpi}
         scale={scale}
         editingVariantId={editingVariantId}
-        mapRotation={mapRotation}
+        mapRotation={mapRotation} // Pass mapRotation here
+        resetZoom={resetZoom}
+        zoomToCenter={zoomToCenter}
       />
       {showCalibrationModal && (
         <CalibrationModal

@@ -21,6 +21,7 @@ interface MapOverlayProps {
   dpi?: number;
   scale?: number;
   editingVariantId: number | null;
+  mapRotation: number;
 }
 
 /**
@@ -99,6 +100,7 @@ export default function MapOverlay({
   dpi = 150,
   scale = 4000,
   editingVariantId,
+  mapRotation,
 }: MapOverlayProps) {
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
 
@@ -168,6 +170,7 @@ export default function MapOverlay({
                   fill="#ec4899" fontSize={BASE_TEXT_SIZE * drawingScale} fontWeight="bold"
                   stroke="white" strokeWidth={4 * drawingScale} paintOrder="stroke"
                   textAnchor="middle" dominantBaseline="middle"
+                  transform={`rotate(${-mapRotation}, ${c.x + labelPos.x}, ${c.y + labelPos.y})`}
                 >{i}</text>
               );
             })()}
@@ -214,7 +217,8 @@ export default function MapOverlay({
               opacity={v.legIndex === selectedLegIndex ? 1 : 0.3}
             />
             {v.legIndex === selectedLegIndex && (
-              <>                {/* Invisible hit target for easier grabbing */}
+              <>
+                {/* Invisible hit target for easier grabbing */}
                 <circle
                   cx={midPoint.x + labelOffset.x}
                   cy={midPoint.y + labelOffset.y}
@@ -233,6 +237,7 @@ export default function MapOverlay({
                   stroke="white"
                   strokeWidth={2 * drawingScale}
                   paintOrder="stroke"
+                  transform={`rotate(${-mapRotation}, ${midPoint.x + labelOffset.x}, ${midPoint.y + labelOffset.y})`}
                 >
                   {v.name}: {variantDistance.toFixed(0)}m
                 </text>
