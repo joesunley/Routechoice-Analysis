@@ -42,6 +42,8 @@ export default function App() {
     selectedLegIndex, setSelectedLegIndex,
     addDrawingPoint, undoLastPoint, handleFinishVariant, deleteVariant, editVariant,
     editingVariantId,
+    isAltDraggingPoint, draggedPointIndex,
+    tryStartAltDragPoint, moveAltDraggedPoint, endAltDragPoint,
   } = useVariants();
   const {
     isAltDraggingLabel, draggedVariantId,
@@ -284,7 +286,9 @@ export default function App() {
     isMouseDownRef.current = true;
     const { x: mapX, y: mapY } = screenToImageCoords(e.clientX, e.clientY);
     if (e.altKey) {
-      // Try dragging variant label first if in variants mode
+      // Try dragging a point in the current drawing if in variants mode
+      if (mode === 'variants' && tryStartAltDragPoint(mapX, mapY, zoom)) return;
+      // Try dragging variant label if in variants mode
       if (mode === 'variants' && tryStartAltDragLabel(mapX, mapY, zoom, variants, selectedLegIndex)) return;
       // Otherwise try dragging control
       if (tryStartAltDrag(mapX, mapY, zoom)) return;
@@ -294,6 +298,11 @@ export default function App() {
   };
     const handleMouseMove = (e: React.MouseEvent) => {
     if (mode !== 'controls' && mode !== 'variants') return;
+    if (isAltDraggingPoint && draggedPointIndex !== null) {
+      const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+      moveAltDraggedPoint(imgX, imgY, draggedPointIndex);
+      return;
+    }
     if (isAltDraggingLabel && draggedVariantId !== null) {
       const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
       const updatedVariants = moveAltDraggedLabel(imgX, imgY, variants);
@@ -326,11 +335,12 @@ export default function App() {
   };
     const handleMouseUp = (e: React.MouseEvent) => {
     isMouseDownRef.current = false;
-    if (isAltDraggingLabel || isAltDragging) { 
-      if (isAltDraggingLabel) endAltDragLabel();
+    if (isAltDraggingPoint || isAltDraggingLabel || isAltDragging) {
+      if (isAltDraggingPoint) endAltDragPoint();
+      else if (isAltDraggingLabel) endAltDragLabel();
       else endAltDrag();
       setIsDragging(false);
-      return; 
+      return;
     }
     const dist = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
     if (dist < 5) {
@@ -350,6 +360,7 @@ export default function App() {
       else setCurrentDrawing([]);
     }
   };  const getCursor = (): string => {
+    if (isAltDraggingPoint) return 'grabbing';
     if (isAltDraggingLabel) return 'grabbing';
     if (isAltDragging) return 'grabbing';
     if (isDragging) return 'grabbing';

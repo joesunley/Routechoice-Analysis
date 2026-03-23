@@ -120,7 +120,7 @@ export default function MapWorkspace({
         </div>
       )}      {/* Floating Zoom Controls */}
       {mapImage && (
-        <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-white rounded-full shadow-lg border border-slate-200 p-1.5 z-40 no-drag">
+        <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-white rounded-full shadow-lg border border-slate-200 p-1.5 z-9 no-drag">
           <button
             onClick={() => zoomToCenter(1 / 1.41)}
             className="hover:bg-slate-100 text-slate-600 p-1.5 rounded-full transition-colors cursor-pointer"

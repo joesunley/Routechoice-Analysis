@@ -21,7 +21,7 @@ export default function BaseModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 flex items-center justify-center z-30 bg-black/70 backdrop-blur-sm h-[100vh]">
       <div className={`bg-white rounded-lg shadow-xl ${maxWidth} w-full mx-4`}>
         <div className="flex items-center justify-between p-4 border-b border-slate-200">
           <h2 className="text-lg font-bold text-slate-900">{title}</h2>
