@@ -39,6 +39,8 @@ interface SidebarProps {
   autoRotate: boolean;
   onToggleAutoRotate: () => void;
   onOpenShare: () => void;
+  eventName: string;
+  setEventName: (name: string) => void;
 }
 
 export default function Sidebar({
@@ -49,7 +51,7 @@ export default function Sidebar({
   controls, legs,
   variants, deleteVariant, editVariant, selectVariant,
   currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, onUpdateLegNotes, resetCourseData,
-  autoRotate, onToggleAutoRotate, onOpenShare,
+  autoRotate, onToggleAutoRotate, onOpenShare, eventName, setEventName,
 }: SidebarProps) {
   const confirmResetCourseData = () => {
     resetCourseData();
@@ -70,6 +72,8 @@ export default function Sidebar({
           hasControls={controls.length > 0}
           fileInputRef={fileInputRef}
           loadDataRef={loadDataRef}
+          eventName={eventName}
+          setEventName={setEventName}
         />        <SettingsSection
           scale={scale} setScale={setScale}
           dpi={dpi} setDpi={setDpi}

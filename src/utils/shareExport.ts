@@ -12,6 +12,7 @@ export interface ShareExportOptions {
   dpi: number;
   scale: number;
   drawingScale: number;
+  eventName: string;
 }
 
 function escapeHtml(str: string): string {
@@ -178,6 +179,7 @@ export function exportShareHtml({
   dpi,
   scale,
   drawingScale,
+  eventName,
 }: ShareExportOptions): void {
   const SVG_W = 720;
   const SVG_H = 600;
@@ -206,7 +208,7 @@ export function exportShareHtml({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Routechoice Analysis</title>
+  <title>${eventName ? escapeHtml(eventName) + ' - Routechoice Analysis' : 'Routechoice Analysis'}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: white; height: 100dvh; overflow: hidden; }
@@ -225,7 +227,8 @@ export function exportShareHtml({
     .nav-btn:hover:not(:disabled) { background: #334155; }
     .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
     @media (max-width: 600px) {
-      .header-logo { display: none; }
+      .header-logo { font-size: 0; }
+      .header-logo svg { margin-right: 4px; }
       .header-count { display: none; }
       .header-title { font-size: 15px; }
       .slide { flex-direction: column; }
@@ -240,9 +243,9 @@ export function exportShareHtml({
     <div class="header">
       <span class="header-logo">
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f6339a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>
-        <span style="color:white">  Routechoice Analysis</span>
+        <span style="color:white">Routechoice Analysis</span>
         </span>
-      <span class="header-title" id="slide-title">${escapeHtml(legs[0]?.label ?? '')}</span>
+      <span class="header-title" id="slide-title">${escapeHtml(eventName ?? '')}</span>
       <span class="header-count">${legs.length} leg${legs.length !== 1 ? 's' : ''}</span>
     </div>
     <div class="slides">${slidesHtml}</div>
@@ -269,7 +272,7 @@ export function exportShareHtml({
       if (newSlide) newSlide.style.display = 'flex';
       var newDot = document.getElementById('dot-' + current);
       if (newDot) newDot.style.background = '#60a5fa';
-      document.getElementById('slide-title').textContent = titles[current] || '';
+      document.getElementById('slide-title').textContent = '${escapeHtml(eventName)}';
       document.getElementById('prev-btn').disabled = current === 0;
       document.getElementById('next-btn').disabled = current === total - 1;
     }

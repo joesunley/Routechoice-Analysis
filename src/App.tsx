@@ -19,6 +19,7 @@ export default function App() {
 
   const [mode, setMode] = useState<AppMode>('controls');
   const [legNotes, setLegNotes] = useState<{ [key: number]: string | undefined }>({});
+  const [eventName, setEventName] = useState<string>('');
 
   const [calibrationPoints, setCalibrationPoints] = useState<Point[]>([]);
   const [showCalibrationModal, setShowCalibrationModal] = useState(false);
@@ -156,7 +157,7 @@ export default function App() {
   };
   // --- Save / Load ---
   const exportData = () => {
-    const data = { scale, dpi, drawingScale, controls, variants, legNotes };
+    const data = { scale, dpi, drawingScale, controls, variants, legNotes, eventName };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -179,6 +180,7 @@ export default function App() {
         if (data.controls) setControls(data.controls);
         if (data.variants) setVariants(data.variants);
         if (data.legNotes) setLegNotes(data.legNotes);
+        if (data.eventName) setEventName(data.eventName);
       } catch (_) {}
     };
     reader.readAsText(file);
@@ -194,6 +196,7 @@ export default function App() {
     setCurrentDrawing([]);
     setCalibrationPoints([]);
     setLegNotes({});
+    setEventName('');
     setMode('controls');
     setShowResetConfirmation(false);
   };
@@ -415,6 +418,8 @@ export default function App() {
         resetCourseData={confirmResetCourseData}
         autoRotate={autoRotate}
         onToggleAutoRotate={handleToggleAutoRotate}
+        eventName={eventName}
+        setEventName={setEventName}
       />      <MapWorkspace
         workspaceRef={workspaceRef}
         mapImage={mapImage}
@@ -486,6 +491,7 @@ export default function App() {
           dpi={dpi}
           scale={scale}
           drawingScale={drawingScale}
+          eventName={eventName}
           onClose={() => setShowShareView(false)}
         />
       )}
