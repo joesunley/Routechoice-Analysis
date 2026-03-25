@@ -23,13 +23,13 @@ export default function ToolSection({ mode, setMode, workflowMode, setWorkflowMo
           onClick={() => setWorkflowMode('course')}
           className={`flex-1 py-1.5 text-xs font-medium rounded-md flex justify-center items-center gap-1.5 no-drag cursor-pointer ${workflowMode === 'course' ? 'bg-white shadow-sm text-pink-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <Route size={13} /> Course
+          <Route size={13} /> Analysis
         </button>
         <button
           onClick={() => setWorkflowMode('independent')}
           className={`flex-1 py-1.5 text-xs font-medium rounded-md flex justify-center items-center gap-1.5 no-drag cursor-pointer ${workflowMode === 'independent' ? 'bg-white shadow-sm text-purple-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <Layers size={13} /> Ind. Legs
+          <Layers size={13} /> Planning
         </button>
       </div>
 
@@ -39,7 +39,7 @@ export default function ToolSection({ mode, setMode, workflowMode, setWorkflowMo
           onClick={() => setMode('controls')}
           className={`flex-1 py-1.5 text-sm font-medium rounded-md flex justify-center items-center gap-1.5 no-drag cursor-pointer ${mode === 'controls' ? 'bg-white shadow-sm text-pink-600' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <MapPin size={14} /> {workflowMode === 'course' ? 'Course' : 'Place Legs'}
+          <MapPin size={14} /> {workflowMode === 'course' ? 'Course' : 'Legs'}
         </button>
         <button
           onClick={() => setMode('variants')}
