@@ -40,12 +40,6 @@ export default function IndependentLegDrawingPanel({
     <section className="space-y-3">
       {/* Leg placement instruction / list */}
       <div className="space-y-2">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-xs text-purple-700">
-          {pendingStart
-            ? '📍 Start placed — now click the end control on the map'
-            : '🖱️ Click a start then an end on the map to add a leg'}
-        </div>
-
         {independentLegs.length > 0 && (
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {independentLegs.map(leg => (

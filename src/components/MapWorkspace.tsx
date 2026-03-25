@@ -99,15 +99,7 @@ export default function MapWorkspace({
             <span>Click two points on the map to calculate DPI. You'll then enter the distance between them in meters.</span>
           </div>
         </div>
-      )}
-      {workflowMode === 'independent' && mode === 'controls' && mapImage && (
-        <div className="absolute top-0 left-0 right-0 bg-purple-50 border-b-2 border-purple-200 p-3 z-50 no-drag pointer-events-none">
-          <div className="text-sm font-semibold text-purple-800 flex items-center gap-2">
-            <span>🗺️</span>
-            <span>{pendingStart ? 'Click the end control on the map' : 'Click a start control on the map'}</span>
-          </div>
-        </div>
-      )}
+      )}d
       {!mapImage && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-8 text-center">          <Map size={64} className="mb-4 opacity-20" />
           <h2 className="text-xl font-bold text-slate-400">No Map Loaded</h2>
