@@ -20,7 +20,6 @@ interface IndependentLegDrawingPanelProps {
 
 export default function IndependentLegDrawingPanel({
   independentLegs,
-  pendingStart,
   selectedLegId,
   onSelectLeg,
   onDeleteLeg,
