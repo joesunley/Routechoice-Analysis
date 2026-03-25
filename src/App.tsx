@@ -3,13 +3,15 @@ import { useViewport } from './hooks/useViewport';
 import { useControls } from './hooks/useControls';
 import { useVariants } from './hooks/useVariants';
 import { useVariantLabels } from './hooks/useVariantLabels';
+import { useIndependentLegs } from './hooks/useIndependentLegs';
 import { calcPixelDistance, calculateDpiFromPoints, pixelsToMeters } from './utils/geometry';
 import Sidebar from './components/Sidebar/index';
 import MapWorkspace from './components/MapWorkspace';
 import CalibrationModal from './components/CalibrationModal';
 import BaseModal from './components/BaseModal';
 import ShareView from './components/ShareView';
-import { AppMode, MapDimensions, PanState, Point } from './types';
+import { exportIndependentLegsHtml } from './utils/shareExport';
+import { AppMode, MapDimensions, PanState, Point, WorkflowMode } from './types';
 
 export default function App() {
   const [mapImage, setMapImage] = useState<string | null>(null);
@@ -18,6 +20,7 @@ export default function App() {
   const [drawingScale, setDrawingScale] = useState<number>(1.0);
 
   const [mode, setMode] = useState<AppMode>('controls');
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>('course');
   const [legNotes, setLegNotes] = useState<{ [key: number]: string | undefined }>({});
   const [eventName, setEventName] = useState<string>('');
 
@@ -29,6 +32,7 @@ export default function App() {
   const [mouseDownPos, setMouseDownPos] = useState<PanState>({ x: 0, y: 0 });
   const isMouseDownRef = useRef(false);
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
+  const [showIndResetConfirmation, setShowIndResetConfirmation] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [showShareView, setShowShareView] = useState(false);
 
@@ -53,14 +57,46 @@ export default function App() {
     tryStartAltDragLabel, moveAltDraggedLabel, endAltDragLabel,
   } = useVariantLabels();
 
+  // ── Independent legs state ──
+  const indLegs = useIndependentLegs();
+  const {
+    variants: indVariants, setVariants: setIndVariants,
+    currentDrawing: indCurrentDrawing, setCurrentDrawing: setIndCurrentDrawing,
+    selectedLegIndex: indSelectedLegIndex, setSelectedLegIndex: setIndSelectedLegIndex,
+    addDrawingPoint: indAddDrawingPoint, undoLastPoint: indUndoLastPoint,
+    handleFinishVariant: indHandleFinishVariant,
+    deleteVariant: indDeleteVariant, editVariant: indEditVariant,
+    editingVariantId: indEditingVariantId,
+    isAltDraggingPoint: isIndAltDraggingPoint, draggedPointIndex: indDraggedPointIndex,
+    tryStartAltDragPoint: indTryStartAltDragPoint,
+    moveAltDraggedPoint: indMoveAltDraggedPoint,
+    endAltDragPoint: indEndAltDragPoint,
+  } = useVariants();
+  const {
+    isAltDraggingLabel: isIndAltDraggingLabel, draggedVariantId: indDraggedVariantId,
+    tryStartAltDragLabel: indTryStartAltDragLabel,
+    moveAltDraggedLabel: indMoveAltDraggedLabel,
+    endAltDragLabel: indEndAltDragLabel,
+  } = useVariantLabels();
+
   const mapRotation = useMemo(() => {
-    if (!autoRotate || mode !== 'variants' || selectedLegIndex < 0 || selectedLegIndex >= controls.length - 1) return 0;
-    const c1 = controls[selectedLegIndex];
-    const c2 = controls[selectedLegIndex + 1];
-    const dx = c2.x - c1.x;
-    const dy = c2.y - c1.y;
-    return -(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
-  }, [autoRotate, mode, selectedLegIndex, controls]);
+    if (!autoRotate) return 0;
+    if (workflowMode === 'course') {
+      if (mode !== 'variants' || selectedLegIndex < 0 || selectedLegIndex >= controls.length - 1) return 0;
+      const c1 = controls[selectedLegIndex];
+      const c2 = controls[selectedLegIndex + 1];
+      const dx = c2.x - c1.x;
+      const dy = c2.y - c1.y;
+      return -(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
+    } else {
+      if (mode !== 'variants') return 0;
+      const leg = indLegs.independentLegs.find(l => l.id === indSelectedLegIndex);
+      if (!leg) return 0;
+      const dx = leg.end.x - leg.start.x;
+      const dy = leg.end.y - leg.start.y;
+      return -(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
+    }
+  }, [autoRotate, mode, workflowMode, selectedLegIndex, controls, indLegs.independentLegs, indSelectedLegIndex]);
 
   // --- Numeric input helpers ---
   const handleSetScale = (v: string) => setScale(Number(v) || scale);
@@ -111,10 +147,104 @@ export default function App() {
     });
   };
 
+  const zoomToIndependentLeg = (legId: number) => {
+    const leg = indLegs.independentLegs.find(l => l.id === legId);
+    if (!leg) return;
+    const workspace = workspaceRef.current;
+    if (!workspace) return;
+    const rect = workspace.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const rotDeg = -(Math.atan2(leg.end.y - leg.start.y, leg.end.x - leg.start.x) * (180 / Math.PI) + 90);
+    const theta = rotDeg * Math.PI / 180;
+    const legVariants = indVariants.filter(v => v.legIndex === legId);
+    const allPoints = [leg.start, leg.end, ...legVariants.flatMap(v => v.points)];
+    const midX = allPoints.reduce((s, p) => s + p.x, 0) / allPoints.length;
+    const midY = allPoints.reduce((s, p) => s + p.y, 0) / allPoints.length;
+    const padding = 140;
+    let maxRx = 0;
+    let maxRy = 0;
+    for (const p of allPoints) {
+      const dx = p.x - midX;
+      const dy = p.y - midY;
+      const rx = Math.abs(dx * Math.cos(theta) - dy * Math.sin(theta));
+      const ry = Math.abs(dx * Math.sin(theta) + dy * Math.cos(theta));
+      if (rx > maxRx) maxRx = rx;
+      if (ry > maxRy) maxRy = ry;
+    }
+    const fitZoomX = maxRx > 0 ? (cx - padding) / maxRx : 50;
+    const fitZoomY = maxRy > 0 ? (cy - padding) / maxRy : 50;
+    const newZoom = Math.max(0.01, Math.min(Math.min(fitZoomX, fitZoomY), 50));
+    setZoom(newZoom);
+    setPan({ x: cx - midX * newZoom, y: cy - midY * newZoom });
+  };
+
+  const handleSetIndSelectedLeg = (legId: number) => {
+    indLegs.setSelectedLegId(legId);
+    setIndSelectedLegIndex(legId);
+    if (autoRotate) zoomToIndependentLeg(legId);
+  };
+
+  const handleDeleteIndLeg = (id: number) => {
+    indLegs.deleteLeg(id);
+    setIndVariants(prev => prev.filter(v => v.legIndex !== id));
+    if (indLegs.selectedLegId === id) {
+      setIndSelectedLegIndex(0);
+    }
+  };
+
+  const handleEditIndVariant = (id: number) => {
+    const variant = indVariants.find(v => v.id === id);
+    if (variant) {
+      indLegs.setSelectedLegId(variant.legIndex);
+    }
+    indEditVariant(id);
+    setMode('variants');
+  };
+
+  const handleSelectIndVariant = (variantId: number) => {
+    setIndVariants(prev => {
+      const variant = prev.find(v => v.id === variantId);
+      if (!variant) return prev;
+      const isCurrentlyChosen = variant.chosen === true;
+      return prev.map(v =>
+        v.legIndex === variant.legIndex
+          ? { ...v, chosen: isCurrentlyChosen ? false : v.id === variantId }
+          : v
+      );
+    });
+  };
+
+  const handleUpdateIndLegNotes = (id: number, notes: string) => {
+    indLegs.updateLegNotes(id, notes);
+  };
+
+  const handleIndExportShare = () => {
+    if (!mapImage) return;
+    exportIndependentLegsHtml({
+      mapImage,
+      mapDimensions,
+      independentLegs: indLegs.independentLegs,
+      variants: indVariants,
+      dpi,
+      scale,
+      drawingScale,
+      eventName,
+    });
+  };
+
+  const handleSetWorkflowMode = (m: WorkflowMode) => {
+    setWorkflowMode(m);
+    setMode('controls');
+  };
+
   const handleToggleAutoRotate = () => {
     const next = !autoRotate;
     setAutoRotate(next);
-    if (next) zoomToLeg(selectedLegIndex);
+    if (next) {
+      if (workflowMode === 'course') zoomToLeg(selectedLegIndex);
+      else if (indLegs.selectedLegId !== null) zoomToIndependentLeg(indLegs.selectedLegId);
+    }
   };
 
   const handleSetSelectedLegIndex = (i: number) => {
@@ -157,7 +287,11 @@ export default function App() {
   };
   // --- Save / Load ---
   const exportData = () => {
-    const data = { scale, dpi, drawingScale, controls, variants, legNotes, eventName };
+    const data = {
+      scale, dpi, drawingScale, controls, variants, legNotes, eventName,
+      independentLegs: indLegs.independentLegs,
+      independentVariants: indVariants,
+    };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -181,6 +315,8 @@ export default function App() {
         if (data.variants) setVariants(data.variants);
         if (data.legNotes) setLegNotes(data.legNotes);
         if (data.eventName) setEventName(data.eventName);
+        if (data.independentLegs) indLegs.setIndependentLegs(data.independentLegs);
+        if (data.independentVariants) setIndVariants(data.independentVariants);
       } catch (_) {}
     };
     reader.readAsText(file);
@@ -189,6 +325,9 @@ export default function App() {
   // --- Reset Functionality ---
   const confirmResetCourseData = () => {
     setShowResetConfirmation(true);
+  };
+  const confirmResetIndependentData = () => {
+    setShowIndResetConfirmation(true);
   };
   const handleResetConfirm = () => {
     setControls([]);
@@ -200,8 +339,17 @@ export default function App() {
     setMode('controls');
     setShowResetConfirmation(false);
   };
+  const handleIndResetConfirm = () => {
+    indLegs.deleteAllLegs();
+    setIndVariants([]);
+    setIndCurrentDrawing([]);
+    setIndSelectedLegIndex(0);
+    setMode('controls');
+    setShowIndResetConfirmation(false);
+  };
   const handleResetCancel = () => {
     setShowResetConfirmation(false);
+    setShowIndResetConfirmation(false);
   };
 
   // --- Leg Notes Handler ---
@@ -272,12 +420,22 @@ export default function App() {
   // --- Map Click ---
   const handleShiftClick = (e: React.MouseEvent): boolean => {
     if (e.shiftKey) {
-      if (mode === 'controls' && controls.length > 0) {
-        setControls(prev => prev.slice(0, -1));
-        return true;
-      } else if (mode === 'variants' && currentDrawing.length > 0) {
-        setCurrentDrawing(prev => prev.slice(0, -1));
-        return true;
+      if (mode === 'controls') {
+        if (workflowMode === 'course' && controls.length > 0) {
+          setControls(prev => prev.slice(0, -1));
+          return true;
+        } else if (workflowMode === 'independent' && indLegs.pendingStart) {
+          indLegs.cancelPlacement();
+          return true;
+        }
+      } else if (mode === 'variants') {
+        if (workflowMode === 'course' && currentDrawing.length > 0) {
+          setCurrentDrawing(prev => prev.slice(0, -1));
+          return true;
+        } else if (workflowMode === 'independent' && indCurrentDrawing.length > 0) {
+          setIndCurrentDrawing(prev => prev.slice(0, -1));
+          return true;
+        }
       }
     }
     return false;
@@ -290,50 +448,92 @@ export default function App() {
     const { x, y } = screenToImageCoords(e.clientX, e.clientY);
     if (x < 0 || x > mapDimensions.width || y < 0 || y > mapDimensions.height) return;
 
-    if (mode === 'controls') {
-      addControl(x, y);
-    } else if (mode === 'variants') {
-      if (controls.length < 2) return;
-      addDrawingPoint(x, y);
-    } else if (mode === 'calibrate') {
-      const newPoints = [...calibrationPoints, { x, y }];
-      setCalibrationPoints(newPoints);
-      if (newPoints.length === 2) setShowCalibrationModal(true);
+    if (workflowMode === 'course') {
+      if (mode === 'controls') {
+        addControl(x, y);
+      } else if (mode === 'variants') {
+        if (controls.length < 2) return;
+        addDrawingPoint(x, y);
+      } else if (mode === 'calibrate') {
+        const newPoints = [...calibrationPoints, { x, y }];
+        setCalibrationPoints(newPoints);
+        if (newPoints.length === 2) setShowCalibrationModal(true);
+      }
+    } else {
+      // independent workflow
+      if (mode === 'controls') {
+        if (!indLegs.pendingStart) {
+          indLegs.handleFirstClick(x, y);
+        } else {
+          const newId = indLegs.handleSecondClick(x, y);
+          if (newId > 0) setIndSelectedLegIndex(newId);
+        }
+      } else if (mode === 'variants') {
+        if (indLegs.independentLegs.length === 0) return;
+        indAddDrawingPoint(x, y);
+      } else if (mode === 'calibrate') {
+        const newPoints = [...calibrationPoints, { x, y }];
+        setCalibrationPoints(newPoints);
+        if (newPoints.length === 2) setShowCalibrationModal(true);
+      }
     }
-  };  // --- Mouse Handlers ---
+  };
+  // --- Mouse Handlers ---
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.no-drag')) return;
     if (e.button !== 0) return;
     isMouseDownRef.current = true;
     const { x: mapX, y: mapY } = screenToImageCoords(e.clientX, e.clientY);
     if (e.altKey) {
-      // Try dragging a point in the current drawing if in variants mode
-      if (mode === 'variants' && tryStartAltDragPoint(mapX, mapY, zoom)) return;
-      // Try dragging variant label if in variants mode
-      if (mode === 'variants' && tryStartAltDragLabel(mapX, mapY, zoom, variants, selectedLegIndex)) return;
-      // Otherwise try dragging control
-      if (tryStartAltDrag(mapX, mapY, zoom)) return;
+      if (workflowMode === 'course') {
+        if (mode === 'variants' && tryStartAltDragPoint(mapX, mapY, zoom)) return;
+        if (mode === 'variants' && tryStartAltDragLabel(mapX, mapY, zoom, variants, selectedLegIndex)) return;
+        if (tryStartAltDrag(mapX, mapY, zoom)) return;
+      } else {
+        if (mode === 'variants' && indTryStartAltDragPoint(mapX, mapY, zoom)) return;
+        if (mode === 'variants' && indTryStartAltDragLabel(mapX, mapY, zoom, indVariants, indSelectedLegIndex)) return;
+        if (indLegs.tryStartAltDrag(mapX, mapY, zoom)) return;
+      }
     }
     setDragStart({ x: e.clientX, y: e.clientY });
     setMouseDownPos({ x: e.clientX, y: e.clientY });
   };
     const handleMouseMove = (e: React.MouseEvent) => {
     if (mode !== 'controls' && mode !== 'variants') return;
-    if (isAltDraggingPoint && draggedPointIndex !== null) {
-      const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
-      moveAltDraggedPoint(imgX, imgY, draggedPointIndex);
-      return;
-    }
-    if (isAltDraggingLabel && draggedVariantId !== null) {
-      const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
-      const updatedVariants = moveAltDraggedLabel(imgX, imgY, variants);
-      setVariants(updatedVariants);
-      return;
-    }
-    if (isAltDragging && draggedControlId !== null) {
-      const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
-      moveAltDraggedControl(imgX, imgY);
-      return;
+    if (workflowMode === 'course') {
+      if (isAltDraggingPoint && draggedPointIndex !== null) {
+        const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+        moveAltDraggedPoint(imgX, imgY, draggedPointIndex);
+        return;
+      }
+      if (isAltDraggingLabel && draggedVariantId !== null) {
+        const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+        const updatedVariants = moveAltDraggedLabel(imgX, imgY, variants);
+        setVariants(updatedVariants);
+        return;
+      }
+      if (isAltDragging && draggedControlId !== null) {
+        const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+        moveAltDraggedControl(imgX, imgY);
+        return;
+      }
+    } else {
+      if (isIndAltDraggingPoint && indDraggedPointIndex !== null) {
+        const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+        indMoveAltDraggedPoint(imgX, imgY, indDraggedPointIndex);
+        return;
+      }
+      if (isIndAltDraggingLabel && indDraggedVariantId !== null) {
+        const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+        const updated = indMoveAltDraggedLabel(imgX, imgY, indVariants);
+        setIndVariants(updated);
+        return;
+      }
+      if (indLegs.isAltDragging) {
+        const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
+        indLegs.moveAltDraggedControl(imgX, imgY);
+        return;
+      }
     }
     // Check if mouse has moved and we should start dragging
     const hasMoved = isMouseDownRef.current && (mouseDownPos.x !== e.clientX || mouseDownPos.y !== e.clientY);
@@ -356,10 +556,19 @@ export default function App() {
   };
     const handleMouseUp = (e: React.MouseEvent) => {
     isMouseDownRef.current = false;
-    if (isAltDraggingPoint || isAltDraggingLabel || isAltDragging) {
+    const isAnyCourseAltDrag = isAltDraggingPoint || isAltDraggingLabel || isAltDragging;
+    const isAnyIndAltDrag = isIndAltDraggingPoint || isIndAltDraggingLabel || indLegs.isAltDragging;
+    if (workflowMode === 'course' && isAnyCourseAltDrag) {
       if (isAltDraggingPoint) endAltDragPoint();
       else if (isAltDraggingLabel) endAltDragLabel();
       else endAltDrag();
+      setIsDragging(false);
+      return;
+    }
+    if (workflowMode === 'independent' && isAnyIndAltDrag) {
+      if (isIndAltDraggingPoint) indEndAltDragPoint();
+      else if (isIndAltDraggingLabel) indEndAltDragLabel();
+      else indLegs.endAltDrag();
       setIsDragging(false);
       return;
     }
@@ -372,18 +581,27 @@ export default function App() {
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (mode === 'variants' && currentDrawing.length >= 1) {
+    if (mode !== 'variants') return;
+    const activeDrawing = workflowMode === 'course' ? currentDrawing : indCurrentDrawing;
+    if (activeDrawing.length >= 1) {
       const { x, y } = screenToImageCoords(e.clientX, e.clientY);
-      const last = currentDrawing[currentDrawing.length - 1];
+      const last = activeDrawing[activeDrawing.length - 1];
       const dist = calcPixelDistance(last, { x, y });
-      const finalPoints = dist > 10 ? [...currentDrawing, { x, y }] : currentDrawing;
-      if (finalPoints.length >= 2) handleFinishVariant(finalPoints);
-      else setCurrentDrawing([]);
+      const finalPoints = dist > 10 ? [...activeDrawing, { x, y }] : activeDrawing;
+      if (finalPoints.length >= 2) {
+        if (workflowMode === 'course') handleFinishVariant(finalPoints);
+        else indHandleFinishVariant(finalPoints);
+      } else {
+        if (workflowMode === 'course') setCurrentDrawing([]);
+        else setIndCurrentDrawing([]);
+      }
     }
   };  const getCursor = (): string => {
-    if (isAltDraggingPoint) return 'grabbing';
-    if (isAltDraggingLabel) return 'grabbing';
-    if (isAltDragging) return 'grabbing';
+    if (workflowMode === 'course') {
+      if (isAltDraggingPoint || isAltDraggingLabel || isAltDragging) return 'grabbing';
+    } else {
+      if (isIndAltDraggingPoint || isIndAltDraggingLabel || indLegs.isAltDragging) return 'grabbing';
+    }
     if (isDragging) return 'grabbing';
     return 'crosshair';
   };
@@ -396,7 +614,8 @@ export default function App() {
         onSaveData={exportData}
         fileInputRef={fileInputRef}
         loadDataRef={loadDataRef}
-        scale={scale} setScale={handleSetScale}        dpi={dpi} setDpi={handleSetDpi}
+        scale={scale} setScale={handleSetScale}
+        dpi={dpi} setDpi={handleSetDpi}
         drawingScale={drawingScale} setDrawingScale={setDrawingScale}
         mode={mode} setMode={setMode}
         mapImage={mapImage}
@@ -420,6 +639,23 @@ export default function App() {
         onToggleAutoRotate={handleToggleAutoRotate}
         eventName={eventName}
         setEventName={setEventName}
+        workflowMode={workflowMode}
+        setWorkflowMode={handleSetWorkflowMode}
+        independentLegs={indLegs.independentLegs}
+        pendingStart={indLegs.pendingStart}
+        indVariants={indVariants}
+        indSelectedLegId={indLegs.selectedLegId}
+        onSelectIndLeg={handleSetIndSelectedLeg}
+        onDeleteIndLeg={handleDeleteIndLeg}
+        indCurrentDrawing={indCurrentDrawing}
+        onUndoIndPoint={indUndoLastPoint}
+        onSaveIndVariant={indHandleFinishVariant}
+        deleteIndVariant={indDeleteVariant}
+        editIndVariant={handleEditIndVariant}
+        selectIndVariant={handleSelectIndVariant}
+        onUpdateIndLegNotes={handleUpdateIndLegNotes}
+        resetIndependentData={confirmResetIndependentData}
+        onIndExportShare={handleIndExportShare}
       />      <MapWorkspace
         workspaceRef={workspaceRef}
         mapImage={mapImage}
@@ -434,19 +670,30 @@ export default function App() {
         svgRef={svgRef}
         controls={controls}
         variants={variants}
-        currentDrawing={currentDrawing}
+        currentDrawing={workflowMode === 'course' ? currentDrawing : indCurrentDrawing}
         selectedLegIndex={selectedLegIndex}
         calibrationPoints={calibrationPoints}
-        draggedControlId={draggedControlId}        drawingScale={drawingScale}
+        draggedControlId={draggedControlId}
+        drawingScale={drawingScale}
         mode={mode}
         draggedVariantId={draggedVariantId}
         isAltDraggingLabel={isAltDraggingLabel}
         dpi={dpi}
         scale={scale}
-        editingVariantId={editingVariantId}
-        mapRotation={mapRotation} // Pass mapRotation here
+        editingVariantId={workflowMode === 'course' ? editingVariantId : indEditingVariantId}
+        mapRotation={mapRotation}
         resetZoom={resetZoom}
         zoomToCenter={zoomToCenter}
+        workflowMode={workflowMode}
+        independentLegs={indLegs.independentLegs}
+        pendingStart={indLegs.pendingStart}
+        indVariants={indVariants}
+        indSelectedLegId={indSelectedLegIndex}
+        indDraggedLegId={indLegs.draggedLegId}
+        indDraggedEndpoint={indLegs.draggedEndpoint}
+        indDraggedVariantId={indDraggedVariantId}
+        isIndAltDraggingLabel={isIndAltDraggingLabel}
+        indEditingVariantId={indEditingVariantId}
       />
       {showCalibrationModal && (
         <CalibrationModal
@@ -479,6 +726,32 @@ export default function App() {
           maxWidth="max-w-sm"
         >
           <p className="text-slate-600">Are you sure you want to reset all course data? This action cannot be undone.</p>
+        </BaseModal>
+      )}
+      {showIndResetConfirmation && (
+        <BaseModal
+          isOpen={showIndResetConfirmation}
+          title="Confirm Reset"
+          onClose={handleResetCancel}
+          footer={
+            <div className="flex gap-2">
+              <button
+                onClick={handleIndResetConfirm}
+                className="flex-1 bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={handleResetCancel}
+                className="flex-1 text-slate-700 hover:bg-slate-100 rounded-lg font-bold py-2 px-4 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          }
+          maxWidth="max-w-sm"
+        >
+          <p className="text-slate-600">Are you sure you want to reset all independent leg data? This action cannot be undone.</p>
         </BaseModal>
       )}
       {showShareView && mapImage && (

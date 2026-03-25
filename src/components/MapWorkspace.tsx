@@ -1,7 +1,7 @@
 import React from 'react';
 import { Map, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import MapOverlay from './MapOverlay';
-import { Control, Variant, Point, MapDimensions, PanState, AppMode } from '../types';
+import { Control, Variant, Point, MapDimensions, PanState, AppMode, IndependentLeg, WorkflowMode } from '../types';
 
 interface MapWorkspaceProps {
   workspaceRef: React.RefObject<HTMLDivElement | null>;
@@ -31,6 +31,17 @@ interface MapWorkspaceProps {
   scale: number;
   editingVariantId: number | null;
   mapRotation: number;
+  // Independent legs mode
+  workflowMode: WorkflowMode;
+  independentLegs: IndependentLeg[];
+  pendingStart: Control | null;
+  indVariants: Variant[];
+  indSelectedLegId: number;
+  indDraggedLegId: number | null;
+  indDraggedEndpoint: 'start' | 'end' | null;
+  indDraggedVariantId: number | null;
+  isIndAltDraggingLabel: boolean;
+  indEditingVariantId: number | null;
 }
 
 export default function MapWorkspace({
@@ -61,6 +72,16 @@ export default function MapWorkspace({
   scale,
   editingVariantId,
   mapRotation,
+  workflowMode,
+  independentLegs,
+  pendingStart,
+  indVariants,
+  indSelectedLegId,
+  indDraggedLegId,
+  indDraggedEndpoint,
+  indDraggedVariantId,
+  isIndAltDraggingLabel,
+  indEditingVariantId,
 }: MapWorkspaceProps) {return (
     <div
       ref={workspaceRef}
@@ -76,6 +97,14 @@ export default function MapWorkspace({
           <div className="text-sm font-semibold text-orange-900 flex items-center gap-2">
             <span>📏</span>
             <span>Click two points on the map to calculate DPI. You'll then enter the distance between them in meters.</span>
+          </div>
+        </div>
+      )}
+      {workflowMode === 'independent' && mode === 'controls' && mapImage && (
+        <div className="absolute top-0 left-0 right-0 bg-purple-50 border-b-2 border-purple-200 p-3 z-50 no-drag pointer-events-none">
+          <div className="text-sm font-semibold text-purple-800 flex items-center gap-2">
+            <span>🗺️</span>
+            <span>{pendingStart ? 'Click the end control on the map' : 'Click a start control on the map'}</span>
           </div>
         </div>
       )}
@@ -116,7 +145,17 @@ export default function MapWorkspace({
             dpi={dpi}
             scale={scale}
             editingVariantId={editingVariantId}
-            mapRotation={mapRotation} // Pass mapRotation here
+            mapRotation={mapRotation}
+            workflowMode={workflowMode}
+            independentLegs={independentLegs}
+            pendingStart={pendingStart}
+            indVariants={indVariants}
+            indSelectedLegId={indSelectedLegId}
+            indDraggedLegId={indDraggedLegId}
+            indDraggedEndpoint={indDraggedEndpoint}
+            indDraggedVariantId={indDraggedVariantId}
+            isIndAltDraggingLabel={isIndAltDraggingLabel}
+            indEditingVariantId={indEditingVariantId}
           />
         </div>
         </div>

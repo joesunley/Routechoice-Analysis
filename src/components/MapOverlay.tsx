@@ -3,7 +3,7 @@ import {
   BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE
 } from '../constants';
 import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from '../utils/geometry';
-import { Control, Variant, Point } from '../types';
+import { Control, Variant, Point, IndependentLeg, WorkflowMode } from '../types';
 
 interface MapOverlayProps {
   svgRef: React.RefObject<SVGSVGElement | null>;
@@ -22,6 +22,17 @@ interface MapOverlayProps {
   scale?: number;
   editingVariantId: number | null;
   mapRotation: number;
+  // Independent legs mode
+  workflowMode: WorkflowMode;
+  independentLegs: IndependentLeg[];
+  pendingStart: Control | null;
+  indVariants: Variant[];
+  indSelectedLegId: number;
+  indDraggedLegId: number | null;
+  indDraggedEndpoint: 'start' | 'end' | null;
+  indDraggedVariantId: number | null;
+  isIndAltDraggingLabel: boolean;
+  indEditingVariantId: number | null;
 }
 
 /**
@@ -101,6 +112,16 @@ export default function MapOverlay({
   scale = 4000,
   editingVariantId,
   mapRotation,
+  workflowMode,
+  independentLegs,
+  pendingStart,
+  indVariants,
+  indSelectedLegId,
+  indDraggedLegId,
+  indDraggedEndpoint,
+  indDraggedVariantId,
+  isIndAltDraggingLabel,
+  indEditingVariantId,
 }: MapOverlayProps) {
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
 
@@ -121,8 +142,9 @@ export default function MapOverlay({
         </g>
       ))}
 
+      {/* ── COURSE WORKFLOW ─────────────────────────────────── */}
       {/* Course Controls */}
-      {controls.map((c, i) => {
+      {workflowMode === 'course' && controls.map((c, i) => {
         const isStart = i === 0;
         const isFinish = i === controls.length - 1 && i !== 0;
         const isBeingDragged = draggedControlId === c.id;
@@ -179,7 +201,7 @@ export default function MapOverlay({
       })}
 
       {/* Leg Lines */}
-      {controls.length >= 2 && controls.map((c, i) => {
+      {workflowMode === 'course' && controls.length >= 2 && controls.map((c, i) => {
         if (i === 0) return null;
         const p1 = controls[i - 1];
         const p2 = c;
@@ -198,7 +220,8 @@ export default function MapOverlay({
             strokeWidth={BASE_LINE_WIDTH * drawingScale}
             opacity={isDimmed ? 0.3 : 1}
           />
-        );      })}      {/* Route Variants */}      {isVariantMode && variants.map(v => {
+        );      })}      {/* Route Variants (course) */}
+      {workflowMode === 'course' && isVariantMode && variants.map(v => {
         // Skip rendering the variant that's currently being edited
         if (v.id === editingVariantId) return null;
         if (v.legIndex !== selectedLegIndex) return null;
@@ -246,6 +269,121 @@ export default function MapOverlay({
           </g>
         );
       })}
+
+      {/* ── INDEPENDENT LEGS WORKFLOW ───────────────────────── */}
+      {workflowMode === 'independent' && (
+        <>
+          {/* Pending start – ghost circle */}
+          {pendingStart && (
+            <circle
+              cx={pendingStart.x} cy={pendingStart.y}
+              r={circleRadius}
+              fill="none" stroke="#a855f7"
+              strokeWidth={BASE_LINE_WIDTH * drawingScale}
+              strokeDasharray={`${8 * drawingScale},${4 * drawingScale}`}
+              opacity={0.75}
+            />
+          )}
+
+          {independentLegs.map(leg => {
+            const isSelected = leg.id === indSelectedLegId;
+            const isDimmed = isVariantMode && !isSelected;
+            const dist = calcPixelDistance(leg.start, leg.end);
+            const angle = Math.atan2(leg.end.y - leg.start.y, leg.end.x - leg.start.x);
+            const midX = (leg.start.x + leg.end.x) / 2;
+            const midY = (leg.start.y + leg.end.y) / 2;
+            const labelOffY = circleRadius * 1.6;
+            const isStartDragged = indDraggedLegId === leg.id && indDraggedEndpoint === 'start';
+            const isEndDragged = indDraggedLegId === leg.id && indDraggedEndpoint === 'end';
+            return (
+              <g key={leg.id} opacity={isDimmed ? 0.3 : 1}>
+                {/* Start circle */}
+                <circle
+                  cx={leg.start.x} cy={leg.start.y} r={circleRadius}
+                  fill="none" stroke="#8b5cf6"
+                  strokeWidth={BASE_LINE_WIDTH * drawingScale}
+                  opacity={isStartDragged ? 0.5 : 1}
+                />
+                {/* End circle */}
+                <circle
+                  cx={leg.end.x} cy={leg.end.y} r={circleRadius}
+                  fill="none" stroke="#8b5cf6"
+                  strokeWidth={BASE_LINE_WIDTH * drawingScale}
+                  opacity={isEndDragged ? 0.5 : 1}
+                />
+                {/* Connecting line */}
+                {dist > circleRadius * 2 && (
+                  <line
+                    x1={leg.start.x + Math.cos(angle) * circleRadius}
+                    y1={leg.start.y + Math.sin(angle) * circleRadius}
+                    x2={leg.end.x - Math.cos(angle) * circleRadius}
+                    y2={leg.end.y - Math.sin(angle) * circleRadius}
+                    stroke="#8b5cf6"
+                    strokeWidth={BASE_LINE_WIDTH * drawingScale}
+                  />
+                )}
+                {/* Leg label above midpoint */}
+                <text
+                  x={midX} y={midY - labelOffY}
+                  fill="#8b5cf6"
+                  fontSize={BASE_TEXT_SIZE * drawingScale * 0.65}
+                  fontWeight="bold"
+                  stroke="white"
+                  strokeWidth={3.5 * drawingScale}
+                  paintOrder="stroke"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  transform={`rotate(${-mapRotation}, ${midX}, ${midY - labelOffY})`}
+                >
+                  {leg.label}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Independent variants */}
+          {isVariantMode && indVariants.map(v => {
+            if (v.id === indEditingVariantId) return null;
+            if (v.legIndex !== indSelectedLegId) return null;
+            const midPoint = v.points[Math.floor(v.points.length / 2)];
+            const labelOffset = v.labelOffset || { x: 0, y: 0 };
+            const isBeingDragged = isIndAltDraggingLabel && indDraggedVariantId === v.id;
+            const variantDistance = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
+            return (
+              <g key={v.id} opacity={isBeingDragged ? 0.6 : 1}>
+                <polyline
+                  points={v.points.map(p => `${p.x},${p.y}`).join(' ')}
+                  fill="none"
+                  stroke={v.color}
+                  strokeWidth={BASE_LINE_WIDTH * drawingScale}
+                />
+                <circle
+                  cx={midPoint.x + labelOffset.x}
+                  cy={midPoint.y + labelOffset.y}
+                  r={BASE_VARIANT_TEXT_SIZE * drawingScale}
+                  fill="transparent"
+                  pointerEvents="none"
+                />
+                <text
+                  x={midPoint.x + labelOffset.x}
+                  y={midPoint.y + labelOffset.y}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill={v.color}
+                  fontSize={BASE_VARIANT_TEXT_SIZE * drawingScale}
+                  fontWeight="bold"
+                  stroke="white"
+                  strokeWidth={2 * drawingScale}
+                  paintOrder="stroke"
+                  transform={`rotate(${-mapRotation}, ${midPoint.x + labelOffset.x}, ${midPoint.y + labelOffset.y})`}
+                >
+                  {v.name}: {variantDistance.toFixed(0)}m
+                </text>
+              </g>
+            );
+          })}
+        </>
+      )}
 
       {/* Drawing Preview */}
       {currentDrawing.length > 0 && (

@@ -1,4 +1,4 @@
-import { Control, Leg, Variant, MapDimensions } from '../types';
+import { Control, Leg, Variant, MapDimensions, IndependentLeg } from '../types';
 import { BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE } from '../constants';
 import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from './geometry';
 import { computeLegLayout } from '../components/LegPreviewMap';
@@ -303,3 +303,232 @@ export function exportShareHtml({
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
+
+// ── Independent Legs Export ──────────────────────────────────────────────────
+
+export interface IndependentShareExportOptions {
+  mapImage: string;
+  mapDimensions: MapDimensions;
+  independentLegs: IndependentLeg[];
+  variants: Variant[];
+  dpi: number;
+  scale: number;
+  drawingScale: number;
+  eventName: string;
+}
+
+function generateIndependentLegSvg(
+  mapDimensions: MapDimensions,
+  leg: IndependentLeg,
+  legVariants: Variant[],
+  dpi: number,
+  scale: number,
+  drawingScale: number,
+  svgW: number,
+  svgH: number,
+): string {
+  // Represent the two leg controls as a [start, end] array so computeLegLayout works
+  const fakeCtrls: Control[] = [leg.start, leg.end];
+  const { rotDeg, zoom, pan } = computeLegLayout(fakeCtrls, legVariants, 0, svgW, svgH, 60, drawingScale);
+  const cx = svgW / 2;
+  const cy = svgH / 2;
+
+  const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
+  const lw = BASE_LINE_WIDTH * drawingScale;
+
+  // Connecting line between the two circle edges
+  const dist = calcPixelDistance(leg.start, leg.end);
+  const angle = Math.atan2(leg.end.y - leg.start.y, leg.end.x - leg.start.x);
+  let lineSvg = '';
+  if (dist > circleRadius * 2) {
+    lineSvg = `<line x1="${leg.start.x + Math.cos(angle) * circleRadius}" y1="${leg.start.y + Math.sin(angle) * circleRadius}" x2="${leg.end.x - Math.cos(angle) * circleRadius}" y2="${leg.end.y - Math.sin(angle) * circleRadius}" stroke="#8b5cf6" stroke-width="${lw}"/>`;
+  }
+
+  // Both controls as plain circles
+  const startSvg = `<circle cx="${leg.start.x}" cy="${leg.start.y}" r="${circleRadius}" fill="none" stroke="#8b5cf6" stroke-width="${lw}"/>`;
+  const endSvg = `<circle cx="${leg.end.x}" cy="${leg.end.y}" r="${circleRadius}" fill="none" stroke="#8b5cf6" stroke-width="${lw}"/>`;
+
+  // Leg label above midpoint
+  const midX = (leg.start.x + leg.end.x) / 2;
+  const midY = (leg.start.y + leg.end.y) / 2;
+  const labelY = midY - circleRadius * 1.8;
+  const labelSvg = `<text x="${midX}" y="${labelY}" fill="#8b5cf6" font-size="${BASE_TEXT_SIZE * drawingScale * 0.65}" font-weight="bold" stroke="white" stroke-width="${3 * drawingScale}" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" transform="rotate(${-rotDeg},${midX},${labelY})">${escapeHtml(leg.label)}</text>`;
+
+  // Variants
+  let variantsSvg = '';
+  for (const v of legVariants) {
+    const isChosen = v.chosen === true;
+    const pts = v.points.map(p => `${p.x},${p.y}`).join(' ');
+    variantsSvg += `<polyline points="${pts}" fill="none" stroke="${v.color}" stroke-width="${lw * (isChosen ? 2.5 : 1)}"/>`;
+    if (v.points.length > 0) {
+      const midPoint = v.points[Math.floor(v.points.length / 2)];
+      const labelOffset = v.labelOffset ?? { x: 0, y: 0 };
+      const lx = midPoint.x + labelOffset.x;
+      const ly = midPoint.y + labelOffset.y;
+      const actualLen = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
+      const fontSize = BASE_VARIANT_TEXT_SIZE * drawingScale * (isChosen ? 1.4 : 1);
+      const fw = isChosen ? 'bold' : 'normal';
+      const strokeWidth = isChosen ? 3 * drawingScale : 2 * drawingScale;
+      const label = `${isChosen ? '\u2605 ' : ''}${v.name}: ${actualLen.toFixed(0)}m`;
+      variantsSvg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="${v.color}" font-size="${fontSize}" font-weight="${fw}" stroke="white" stroke-width="${strokeWidth}" paint-order="stroke" transform="rotate(${-rotDeg},${lx},${ly})">${escapeHtml(label)}</text>`;
+    }
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" style="display:block;width:100%;height:100%">
+  <rect width="${svgW}" height="${svgH}" fill="#1e293b"/>
+  <g transform="rotate(${rotDeg},${cx},${cy})">
+    <g transform="translate(${pan.x},${pan.y}) scale(${zoom})">
+      <image class="map-img" x="0" y="0" width="${mapDimensions.width}" height="${mapDimensions.height}" href="" preserveAspectRatio="none"/>
+      ${lineSvg}
+      ${startSvg}
+      ${endSvg}
+      ${labelSvg}
+      ${variantsSvg}
+    </g>
+  </g>
+</svg>`;
+}
+
+function generateIndependentInfoPanel(leg: IndependentLeg, legVariants: Variant[], dpi: number, scale: number): string {
+  const fakeLeg: Leg = {
+    index: 0,
+    start: leg.start,
+    end: leg.end,
+    label: leg.label,
+    straightLength: pixelsToMeters(leg.straightLength, dpi, scale),
+    notes: leg.notes,
+  };
+  return generateInfoPanel(fakeLeg, legVariants, dpi, scale);
+}
+
+export function exportIndependentLegsHtml({
+  mapImage,
+  mapDimensions,
+  independentLegs,
+  variants,
+  dpi,
+  scale,
+  drawingScale,
+  eventName,
+}: IndependentShareExportOptions): void {
+  if (independentLegs.length === 0) return;
+
+  const SVG_W = 720;
+  const SVG_H = 600;
+
+  let slidesHtml = '';
+  for (let i = 0; i < independentLegs.length; i++) {
+    const leg = independentLegs[i];
+    const legVariants = variants.filter(v => v.legIndex === leg.id);
+    const mapSvg = generateIndependentLegSvg(mapDimensions, leg, legVariants, dpi, scale, drawingScale, SVG_W, SVG_H);
+    const infoHtml = generateIndependentInfoPanel(leg, legVariants, dpi, scale);
+    slidesHtml += `<div class="slide" id="slide-${i}"${i === 0 ? ' style="display:flex"' : ''}>
+      <div class="map-panel">${mapSvg}</div>
+      <div class="info-panel">${infoHtml}</div>
+    </div>`;
+  }
+
+  const dotsHtml = independentLegs
+    .map(
+      (_, i) =>
+        `<button onclick="goTo(${i})" id="dot-${i}" style="width:8px;height:8px;border-radius:50%;border:none;cursor:pointer;padding:0;background:${i === 0 ? '#a78bfa' : '#475569'};transition:background 0.2s"></button>`,
+    )
+    .join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${eventName ? escapeHtml(eventName) + ' \u2014 Independent Legs' : 'Independent Legs \u2014 Routechoice Analysis'}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: white; height: 100dvh; overflow: hidden; }
+    .container { display: flex; flex-direction: column; height: 100dvh; max-width: 1200px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #0f172a; border-bottom: 1px solid #334155; flex-shrink: 0; gap: 8px; }
+    .header-logo { color: #a78bfa; font-weight: bold; font-size: 16px; white-space: nowrap; }
+    .header-title { font-size: 18px; font-weight: bold; text-align: center; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .header-count { color: #64748b; font-size: 13px; white-space: nowrap; }
+    .slides { flex: 1; overflow: hidden; position: relative; min-height: 0; }
+    .slide { display: none; width: 100%; height: 100%; flex-direction: row; }
+    .map-panel { flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
+    .info-panel { width: clamp(200px, 32%, 380px); border-left: 1px solid #334155; background: #1e293b; overflow-y: auto; color: white; flex-shrink: 1; min-width: 0; }
+    .footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; background: #0f172a; border-top: 1px solid #334155; flex-shrink: 0; }
+    #dots { display: flex; gap: 6px; align-items: center; flex: 1; justify-content: center; overflow-x: auto; flex-wrap: wrap; padding: 2px 0; }
+    .nav-btn { background: transparent; color: white; border: 1px solid #475569; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-size: 14px; font-weight: 600; white-space: nowrap; flex-shrink: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .nav-btn:hover:not(:disabled) { background: #334155; }
+    .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    @media (max-width: 600px) {
+      .header-count { display: none; }
+      .header-title { font-size: 15px; }
+      .slide { flex-direction: column; }
+      .info-panel { width: 100%; border-left: none; border-top: 1px solid #334155; max-height: 40dvh; flex-shrink: 0; min-width: unset; }
+      .map-panel { flex: 1; min-height: 0; }
+      .nav-btn { padding: 8px 10px; font-size: 13px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="header-logo">Independent Legs</span>
+      <span class="header-title" id="slide-title">${escapeHtml(eventName ?? '')}</span>
+      <span class="header-count">${independentLegs.length} leg${independentLegs.length !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="slides">${slidesHtml}</div>
+    <div class="footer">
+      <button class="nav-btn" id="prev-btn" onclick="prev()" disabled>&#8592; Prev</button>
+      <div id="dots">${dotsHtml}</div>
+      <button class="nav-btn" id="next-btn" onclick="next()"${independentLegs.length <= 1 ? ' disabled' : ''}>Next &#8594;</button>
+    </div>
+  </div>
+  <script>
+    var MAP_SRC = '${mapImage}';
+    document.querySelectorAll('image.map-img').forEach(function(el) { el.setAttribute('href', MAP_SRC); });
+    var current = 0;
+    var total = ${independentLegs.length};
+    var titles = ${JSON.stringify(independentLegs.map(l => l.label))};
+    function goTo(i) {
+      if (i < 0 || i >= total) return;
+      var oldSlide = document.getElementById('slide-' + current);
+      if (oldSlide) oldSlide.style.display = 'none';
+      var oldDot = document.getElementById('dot-' + current);
+      if (oldDot) oldDot.style.background = '#475569';
+      current = i;
+      var newSlide = document.getElementById('slide-' + current);
+      if (newSlide) newSlide.style.display = 'flex';
+      var newDot = document.getElementById('dot-' + current);
+      if (newDot) newDot.style.background = '#a78bfa';
+      document.getElementById('slide-title').textContent = titles[current] || '';
+      document.getElementById('prev-btn').disabled = current === 0;
+      document.getElementById('next-btn').disabled = current === total - 1;
+    }
+    function prev() { goTo(current - 1); }
+    function next() { goTo(current + 1); }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prev();
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next();
+    });
+    var _touchX = 0;
+    document.addEventListener('touchstart', function(e) { _touchX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+      var dx = e.changedTouches[0].clientX - _touchX;
+      if (dx > 50) prev();
+      else if (dx < -50) next();
+    }, { passive: true });
+    goTo(0);
+  </script>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'independent-legs-analysis.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+

@@ -38,4 +38,14 @@ export interface PanState {
   y: number;
 }
 
+export interface IndependentLeg {
+  id: number;
+  label: string;
+  start: Control;
+  end: Control;
+  straightLength: number; // pixels
+  notes?: string;
+}
+
 export type AppMode = 'controls' | 'variants' | 'calibrate';
+export type WorkflowMode = 'course' | 'independent';

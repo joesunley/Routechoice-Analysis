@@ -5,7 +5,9 @@ import SettingsSection from './SettingsSection';
 import ToolSection from './ToolSection';
 import LegDrawingPanel from './LegDrawingPanel';
 import LegAnalysis from './LegAnalysis';
-import { Control, Leg, Variant, Point, AppMode } from '../../types';
+import IndependentLegDrawingPanel from './IndependentLegDrawingPanel';
+import IndependentLegAnalysis from './IndependentLegAnalysis';
+import { Control, Leg, Variant, Point, AppMode, IndependentLeg, WorkflowMode } from '../../types';
 
 interface SidebarProps {
   onLoadMap: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -18,11 +20,13 @@ interface SidebarProps {
   dpi: number;
   setDpi: (v: string) => void;
   drawingScale: number;
-  setDrawingScale: (v: number) => void;  mode: AppMode;
+  setDrawingScale: (v: number) => void;
+  mode: AppMode;
   setMode: (mode: AppMode) => void;
   mapImage: string | null;
   onStartCalibrate: () => void;
   onCancelCalibrate: () => void;
+  // Course workflow
   controls: Control[];
   legs: Leg[];
   variants: Variant[];
@@ -41,6 +45,25 @@ interface SidebarProps {
   onOpenShare: () => void;
   eventName: string;
   setEventName: (name: string) => void;
+  // Workflow mode
+  workflowMode: WorkflowMode;
+  setWorkflowMode: (m: WorkflowMode) => void;
+  // Independent legs workflow
+  independentLegs: IndependentLeg[];
+  pendingStart: Control | null;
+  indVariants: Variant[];
+  indSelectedLegId: number | null;
+  onSelectIndLeg: (id: number) => void;
+  onDeleteIndLeg: (id: number) => void;
+  indCurrentDrawing: Point[];
+  onUndoIndPoint: () => void;
+  onSaveIndVariant: () => void;
+  deleteIndVariant: (id: number) => void;
+  editIndVariant: (id: number) => void;
+  selectIndVariant: (id: number) => void;
+  onUpdateIndLegNotes: (id: number, notes: string) => void;
+  resetIndependentData: () => void;
+  onIndExportShare: () => void;
 }
 
 export default function Sidebar({
@@ -52,10 +75,16 @@ export default function Sidebar({
   variants, deleteVariant, editVariant, selectVariant,
   currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, onUpdateLegNotes, resetCourseData,
   autoRotate, onToggleAutoRotate, onOpenShare, eventName, setEventName,
+  workflowMode, setWorkflowMode,
+  independentLegs, pendingStart, indVariants, indSelectedLegId,
+  onSelectIndLeg, onDeleteIndLeg,
+  indCurrentDrawing, onUndoIndPoint, onSaveIndVariant,
+  deleteIndVariant, editIndVariant, selectIndVariant,
+  onUpdateIndLegNotes, resetIndependentData, onIndExportShare,
 }: SidebarProps) {
-  const confirmResetCourseData = () => {
-    resetCourseData();
-  };
+  const canDrawVariants = workflowMode === 'course'
+    ? controls.length >= 2
+    : independentLegs.length > 0;
 
   return (
     <div className="w-80 bg-white border-r border-slate-200 flex flex-col shadow-lg z-10 shrink-0">
@@ -69,12 +98,13 @@ export default function Sidebar({
           onLoadMap={onLoadMap}
           onLoadData={onLoadData}
           onSaveData={onSaveData}
-          hasControls={controls.length > 0}
+          hasControls={controls.length > 0 || independentLegs.length > 0}
           fileInputRef={fileInputRef}
           loadDataRef={loadDataRef}
           eventName={eventName}
           setEventName={setEventName}
-        />        <SettingsSection
+        />
+        <SettingsSection
           scale={scale} setScale={setScale}
           dpi={dpi} setDpi={setDpi}
           drawingScale={drawingScale} setDrawingScale={setDrawingScale}
@@ -87,11 +117,14 @@ export default function Sidebar({
           <ToolSection
             mode={mode}
             setMode={setMode}
-            controlsCount={controls.length}
+            workflowMode={workflowMode}
+            setWorkflowMode={setWorkflowMode}
+            canDrawVariants={canDrawVariants}
           />
         )}
 
-        {mapImage && mode === 'variants' && legs.length > 0 && (
+        {/* ── COURSE WORKFLOW PANELS ── */}
+        {mapImage && workflowMode === 'course' && mode === 'variants' && legs.length > 0 && (
           <LegDrawingPanel
             legs={legs}
             selectedLegIndex={selectedLegIndex}
@@ -106,7 +139,7 @@ export default function Sidebar({
           />
         )}
 
-        {legs.length > 0 && (
+        {workflowMode === 'course' && legs.length > 0 && (
           <LegAnalysis
             legs={legs}
             variants={variants}
@@ -123,13 +156,61 @@ export default function Sidebar({
           />
         )}
 
-        <button
-          onClick={confirmResetCourseData}
-          className="w-full bg-red-400 text-white py-2 px-4 rounded hover:bg-red-600 cursor-pointer"
-        >
-          Reset Course Data
-        </button>
+        {workflowMode === 'course' && (
+          <button
+            onClick={resetCourseData}
+            className="w-full bg-red-400 text-white py-2 px-4 rounded hover:bg-red-600 cursor-pointer"
+          >
+            Reset Course Data
+          </button>
+        )}
+
+        {/* ── INDEPENDENT LEGS WORKFLOW PANELS ── */}
+        {mapImage && workflowMode === 'independent' && (
+          <IndependentLegDrawingPanel
+            independentLegs={independentLegs}
+            pendingStart={pendingStart}
+            selectedLegId={indSelectedLegId}
+            onSelectLeg={onSelectIndLeg}
+            onDeleteLeg={onDeleteIndLeg}
+            currentDrawing={indCurrentDrawing}
+            onUndo={onUndoIndPoint}
+            onSave={onSaveIndVariant}
+            dpi={dpi}
+            scale={scale}
+            autoRotate={autoRotate}
+            onToggleAutoRotate={onToggleAutoRotate}
+            isVariantsMode={mode === 'variants'}
+          />
+        )}
+
+        {workflowMode === 'independent' && independentLegs.length > 0 && (
+          <IndependentLegAnalysis
+            independentLegs={independentLegs}
+            variants={indVariants}
+            selectedLegId={indSelectedLegId}
+            onSelectLeg={onSelectIndLeg}
+            setMode={setMode}
+            deleteVariant={deleteIndVariant}
+            editVariant={editIndVariant}
+            dpi={dpi}
+            scale={scale}
+            onUpdateLegNotes={onUpdateIndLegNotes}
+            onSelectVariant={selectIndVariant}
+            onExportShare={onIndExportShare}
+          />
+        )}
+
+        {workflowMode === 'independent' && (
+          <button
+            onClick={resetIndependentData}
+            className="w-full bg-red-400 text-white py-2 px-4 rounded hover:bg-red-600 cursor-pointer"
+          >
+            Reset Independent Legs
+          </button>
+        )}
       </div>
     </div>
   );
 }
+
