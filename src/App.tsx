@@ -182,6 +182,7 @@ export default function App() {
   const handleSetIndSelectedLeg = (legId: number) => {
     indLegs.setSelectedLegId(legId);
     setIndSelectedLegIndex(legId);
+    setIndCurrentDrawing([]);
     if (autoRotate) zoomToIndependentLeg(legId);
   };
 
@@ -249,7 +250,24 @@ export default function App() {
 
   const handleSetSelectedLegIndex = (i: number) => {
     setSelectedLegIndex(i);
+    setCurrentDrawing([]);
     if (autoRotate) zoomToLeg(i);
+  };
+
+  // Wrapper: save an independent-leg variant with start/end pinned to leg controls
+  const handleIndFinishVariantWithPin = (pointsOverride: import('./types').Point[] | null = null) => {
+    const rawPoints = pointsOverride ?? indCurrentDrawing;
+    const leg = indLegs.independentLegs.find(l => l.id === indLegs.selectedLegId);
+    if (!leg) { indHandleFinishVariant(rawPoints); return; }
+    let pinned: import('./types').Point[];
+    if (indEditingVariantId !== null) {
+      if (rawPoints.length < 2) { indHandleFinishVariant(rawPoints); return; }
+      pinned = [{ x: leg.start.x, y: leg.start.y }, ...rawPoints.slice(1, -1), { x: leg.end.x, y: leg.end.y }];
+    } else {
+      pinned = [...rawPoints, { x: leg.end.x, y: leg.end.y }];
+    }
+    if (pinned.length < 2) { indHandleFinishVariant(rawPoints); return; }
+    indHandleFinishVariant(pinned);
   };
 
   // --- Map Loading ---
@@ -432,7 +450,7 @@ export default function App() {
         if (workflowMode === 'course' && currentDrawing.length > 0) {
           setCurrentDrawing(prev => prev.slice(0, -1));
           return true;
-        } else if (workflowMode === 'independent' && indCurrentDrawing.length > 0) {
+        } else if (workflowMode === 'independent' && indCurrentDrawing.length > 1) {
           setIndCurrentDrawing(prev => prev.slice(0, -1));
           return true;
         }
@@ -470,6 +488,10 @@ export default function App() {
         }
       } else if (mode === 'variants') {
         if (indLegs.independentLegs.length === 0) return;
+        const activeLeg = indLegs.independentLegs.find(l => l.id === indLegs.selectedLegId);
+        if (indCurrentDrawing.length === 0 && activeLeg) {
+          indAddDrawingPoint(activeLeg.start.x, activeLeg.start.y);
+        }
         indAddDrawingPoint(x, y);
       } else if (mode === 'calibrate') {
         const newPoints = [...calibrationPoints, { x, y }];
@@ -486,13 +508,13 @@ export default function App() {
     const { x: mapX, y: mapY } = screenToImageCoords(e.clientX, e.clientY);
     if (e.altKey) {
       if (workflowMode === 'course') {
+        if (tryStartAltDrag(mapX, mapY, zoom)) return;
         if (mode === 'variants' && tryStartAltDragPoint(mapX, mapY, zoom)) return;
         if (mode === 'variants' && tryStartAltDragLabel(mapX, mapY, zoom, variants, selectedLegIndex)) return;
-        if (tryStartAltDrag(mapX, mapY, zoom)) return;
       } else {
+        if (indLegs.tryStartAltDrag(mapX, mapY, zoom)) return;
         if (mode === 'variants' && indTryStartAltDragPoint(mapX, mapY, zoom)) return;
         if (mode === 'variants' && indTryStartAltDragLabel(mapX, mapY, zoom, indVariants, indSelectedLegIndex)) return;
-        if (indLegs.tryStartAltDrag(mapX, mapY, zoom)) return;
       }
     }
     setDragStart({ x: e.clientX, y: e.clientY });
@@ -532,6 +554,24 @@ export default function App() {
       if (indLegs.isAltDragging) {
         const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
         indLegs.moveAltDraggedControl(imgX, imgY);
+        if (indLegs.draggedLegId !== null) {
+          setIndVariants(prev => prev.map(v => {
+            if (v.legIndex !== indLegs.draggedLegId || v.points.length === 0) return v;
+            if (indLegs.draggedEndpoint === 'start') {
+              return { ...v, points: [{ x: imgX, y: imgY }, ...v.points.slice(1)] };
+            }
+            if (indLegs.draggedEndpoint === 'end') {
+              return { ...v, points: [...v.points.slice(0, -1), { x: imgX, y: imgY }] };
+            }
+            return v;
+          }));
+          if (indLegs.draggedEndpoint === 'start' && indCurrentDrawing.length > 0) {
+            setIndCurrentDrawing(prev => [{ x: imgX, y: imgY }, ...prev.slice(1)]);
+          }
+          if (indLegs.draggedEndpoint === 'end' && indEditingVariantId !== null && indCurrentDrawing.length > 0) {
+            setIndCurrentDrawing(prev => [...prev.slice(0, -1), { x: imgX, y: imgY }]);
+          }
+        }
         return;
       }
     }
@@ -590,7 +630,7 @@ export default function App() {
       const finalPoints = dist > 10 ? [...activeDrawing, { x, y }] : activeDrawing;
       if (finalPoints.length >= 2) {
         if (workflowMode === 'course') handleFinishVariant(finalPoints);
-        else indHandleFinishVariant(finalPoints);
+        else handleIndFinishVariantWithPin(finalPoints);
       } else {
         if (workflowMode === 'course') setCurrentDrawing([]);
         else setIndCurrentDrawing([]);
@@ -649,7 +689,7 @@ export default function App() {
         onDeleteIndLeg={handleDeleteIndLeg}
         indCurrentDrawing={indCurrentDrawing}
         onUndoIndPoint={indUndoLastPoint}
-        onSaveIndVariant={indHandleFinishVariant}
+        onSaveIndVariant={handleIndFinishVariantWithPin}
         deleteIndVariant={indDeleteVariant}
         editIndVariant={handleEditIndVariant}
         selectIndVariant={handleSelectIndVariant}

@@ -148,7 +148,7 @@ export default function MapOverlay({
         const isStart = i === 0;
         const isFinish = i === controls.length - 1 && i !== 0;
         const isBeingDragged = draggedControlId === c.id;
-        const isDimmed = isVariantMode && selectedLegIndex !== null && i !== selectedLegIndex && i !== selectedLegIndex + 1; // Refined logic to exclude first control in the leg
+        const isDimmed = isVariantMode && selectedLegIndex !== null && i !== selectedLegIndex && i !== selectedLegIndex + 1;
 
         if (isStart) {
           const size = circleRadius * 1.3;
@@ -210,7 +210,7 @@ export default function MapOverlay({
         const endMargin = (i === controls.length - 1) ? circleRadius * 1.2 : circleRadius;
         if (dist < startMargin + endMargin) return null;
         const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-        const isDimmed = isVariantMode && selectedLegIndex !== null && selectedLegIndex !== i - 1; // Ensure dimming only in variant mode
+        const isDimmed = isVariantMode && selectedLegIndex !== null && selectedLegIndex !== i - 1;
         return (
           <line
             key={`line-${i}`}
@@ -280,14 +280,12 @@ export default function MapOverlay({
               r={circleRadius}
               fill="none" stroke="#a855f7"
               strokeWidth={BASE_LINE_WIDTH * drawingScale}
-              strokeDasharray={`${8 * drawingScale},${4 * drawingScale}`}
-              opacity={0.75}
             />
           )}
 
           {independentLegs.map(leg => {
             const isSelected = leg.id === indSelectedLegId;
-            const isDimmed = isVariantMode && !isSelected;
+            if (isVariantMode && !isSelected) return null;
             const dist = calcPixelDistance(leg.start, leg.end);
             const angle = Math.atan2(leg.end.y - leg.start.y, leg.end.x - leg.start.x);
             const midX = (leg.start.x + leg.end.x) / 2;
@@ -296,7 +294,7 @@ export default function MapOverlay({
             const isStartDragged = indDraggedLegId === leg.id && indDraggedEndpoint === 'start';
             const isEndDragged = indDraggedLegId === leg.id && indDraggedEndpoint === 'end';
             return (
-              <g key={leg.id} opacity={isDimmed ? 0.3 : 1}>
+              <g key={leg.id}>
                 {/* Start circle */}
                 <circle
                   cx={leg.start.x} cy={leg.start.y} r={circleRadius}

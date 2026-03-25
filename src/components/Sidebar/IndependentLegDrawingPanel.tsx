@@ -106,7 +106,7 @@ export default function IndependentLegDrawingPanel({
           <div className="flex gap-2">
             <button
               onClick={onUndo}
-              disabled={currentDrawing.length === 0}
+              disabled={currentDrawing.length <= 1}
               className="flex-1 bg-white border border-slate-300 text-slate-700 py-1.5 rounded text-xs font-medium hover:bg-slate-50 disabled:opacity-50 no-drag cursor-pointer"
             >
               Undo
