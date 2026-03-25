@@ -206,7 +206,7 @@ export default function Sidebar({
             onClick={resetIndependentData}
             className="w-full bg-red-400 text-white py-2 px-4 rounded hover:bg-red-600 cursor-pointer"
           >
-            Reset Independent Legs
+            Reset Planning Data
           </button>
         )}
       </div>

@@ -290,7 +290,14 @@ export default function MapOverlay({
             const angle = Math.atan2(leg.end.y - leg.start.y, leg.end.x - leg.start.x);
             const midX = (leg.start.x + leg.end.x) / 2;
             const midY = (leg.start.y + leg.end.y) / 2;
-            const labelOffY = circleRadius * 1.6;
+            
+            // Calculate perpendicular offset to avoid overlapping with the leg line
+            // The perpendicular angle is 90 degrees to the leg line
+            const perpAngle = angle + Math.PI / 2;
+            const labelDistance = circleRadius * 1.5; // Distance from the midpoint
+            const labelOffX = Math.cos(perpAngle) * labelDistance;
+            const labelOffY = Math.sin(perpAngle) * labelDistance;
+            
             const isStartDragged = indDraggedLegId === leg.id && indDraggedEndpoint === 'start';
             const isEndDragged = indDraggedLegId === leg.id && indDraggedEndpoint === 'end';
             return (
@@ -320,9 +327,9 @@ export default function MapOverlay({
                     strokeWidth={BASE_LINE_WIDTH * drawingScale}
                   />
                 )}
-                {/* Leg label above midpoint */}
+                {/* Leg label positioned perpendicular to the line to avoid overlap */}
                 <text
-                  x={midX} y={midY - labelOffY}
+                  x={midX + labelOffX} y={midY + labelOffY}
                   fill="#8b5cf6"
                   fontSize={BASE_TEXT_SIZE * drawingScale * 0.65}
                   fontWeight="bold"
@@ -331,7 +338,7 @@ export default function MapOverlay({
                   paintOrder="stroke"
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  transform={`rotate(${-mapRotation}, ${midX}, ${midY - labelOffY})`}
+                  transform={`rotate(${-mapRotation}, ${midX + labelOffX}, ${midY + labelOffY})`}
                 >
                   {leg.label}
                 </text>

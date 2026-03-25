@@ -37,9 +37,9 @@ export default function ToolSection({ mode, setMode, workflowMode, setWorkflowMo
       <div className="flex bg-slate-100 p-1 rounded-lg">
         <button
           onClick={() => setMode('controls')}
-          className={`flex-1 py-1.5 text-sm font-medium rounded-md flex justify-center items-center gap-1.5 no-drag cursor-pointer ${mode === 'controls' ? 'bg-white shadow-sm text-pink-600' : 'text-slate-500 hover:text-slate-700'}`}
+          className={`flex-1 py-1.5 text-sm font-medium rounded-md flex justify-center items-center gap-1.5 no-drag cursor-pointer ${mode === 'controls' ? `bg-white shadow-sm ${workflowMode === 'course' ? 'text-pink-600' : 'text-purple-600'}` : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <MapPin size={14} /> {workflowMode === 'course' ? 'Course' : 'Legs'}
+          <MapPin size={14} /> {workflowMode === 'course' ? 'Course' : 'Place Legs'}
         </button>
         <button
           onClick={() => setMode('variants')}
