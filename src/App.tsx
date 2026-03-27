@@ -1,4 +1,8 @@
 import React, { useState, useRef, useMemo } from 'react';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
 import { useViewport } from '@/hooks/useViewport';
 import { useControls } from '@/hooks/useControls';
 import { useVariants } from '@/hooks/useVariants';
@@ -386,6 +390,30 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) 
       return;
+
+    if (file.type === 'application/pdf') {
+      const loadPdf = async () => {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 3 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d')!, canvas, viewport }).promise;
+        const dataUrl = canvas.toDataURL('image/png');
+        setMapDimensions({ width: viewport.width, height: viewport.height });
+        setMapImage(dataUrl);
+        const availableWidth = window.innerWidth - 320;
+        const availableHeight = window.innerHeight;
+        const fitZoom = Math.min(availableWidth / viewport.width, availableHeight / viewport.height) * 0.90;
+        const z = fitZoom > 0 ? fitZoom : 1;
+        setZoom(z);
+        setPan({ x: (availableWidth - viewport.width * z) / 2, y: (availableHeight - viewport.height * z) / 2 });
+      };
+      loadPdf();
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {

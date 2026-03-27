@@ -32,9 +32,9 @@ export default function FileSection({ onLoadMap, onLoadData, onSaveData, hasCont
         onClick={() => fileInputRef.current?.click()}
         className="w-full flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-4 rounded-md border border-blue-200 transition-colors text-sm font-medium no-drag cursor-pointer"
       >
-        <Upload size={16} /> Load Map Image
+        <Upload size={16} /> Load Map
       </button>
-      <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={onLoadMap} />
+      <input type="file" accept="image/*,.pdf" ref={fileInputRef} className="hidden" onChange={onLoadMap} />
 
       <div className="flex gap-2">
         <button
