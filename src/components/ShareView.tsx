@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Download, Check } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Download, Check, FileDown } from 'lucide-react';
 import LegPreviewMap from '@/components/LegPreviewMap';
-import { exportShareHtml } from '@/utils/shareExport';
+import { exportShareHtml, exportSharePdf } from '@/utils/shareExport';
 import { Control, Leg, Variant, MapDimensions } from '@/types';
 import { calcTotalPixelDistance, pixelsToMeters } from '@/utils/geometry';
 
@@ -31,6 +31,7 @@ export default function ShareView({
   onClose,
 }: ShareViewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -61,6 +62,15 @@ export default function ShareView({
     exportShareHtml({ mapImage, mapDimensions, controls, legs, variants, dpi, scale, drawingScale, eventName });
   };
 
+  const handleExportPdf = async () => {
+    setIsExportingPdf(true);
+    try {
+      await exportSharePdf({ mapImage, mapDimensions, controls, legs, variants, dpi, scale, drawingScale, eventName });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-slate-900">
       {/* Header */}
@@ -77,6 +87,14 @@ export default function ShareView({
           >
             <Download size={14} />
             Export HTML
+          </button>
+          <button
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            className="flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          >
+            <FileDown size={14} />
+            {isExportingPdf ? 'Generating…' : 'Export PDF'}
           </button>
           <button
             onClick={onClose}

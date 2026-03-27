@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trash2, Edit2, FileText, Check, Share2 } from 'lucide-react';
+import { Trash2, Edit2, FileText, Check, ChevronDown, Download, FileDown } from 'lucide-react';
 import { pixelsToMeters, calcTotalPixelDistance } from '@/utils/geometry';
 import { Leg, Variant, AppMode } from '@/types';
 import LegNotesModal from '@/components/LegNotesModal';
@@ -16,7 +16,8 @@ interface LegAnalysisProps {
   scale: number;
   onUpdateLegNotes: (legIndex: number, notes: string) => void;
   onSelectVariant: (variantId: number) => void;
-  onOpenShare: () => void;
+  onExportHtml: () => void;
+  onExportPdf: () => void;
 }
 
 export default function LegAnalysis({ 
@@ -31,10 +32,12 @@ export default function LegAnalysis({
   scale, 
   onUpdateLegNotes,
   onSelectVariant,
-  onOpenShare
+  onExportHtml,
+  onExportPdf,
 }: LegAnalysisProps) {
   const [notesModalOpen, setNotesModalOpen] = useState(false);
   const [selectedLegForNotes, setSelectedLegForNotes] = useState<number | null>(null);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const handleOpenNotesModal = (legIndex: number) => {
     setSelectedLegForNotes(legIndex);
@@ -54,14 +57,37 @@ export default function LegAnalysis({
       <section className="space-y-3 text-sm pb-10">
         <div className="flex items-center">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Leg Analysis</h2>
-          <button
-            onClick={onOpenShare}
-            className="ml-auto flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-blue-500 transition-colors cursor-pointer px-2 py-1 rounded hover:bg-blue-50"
-            title="Open share view"
-          >
-            <Share2 size={13} />
-            Share
-          </button>
+          <div className="ml-auto relative">
+            <button
+              onClick={() => setExportOpen(o => !o)}
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-blue-500 transition-colors cursor-pointer px-2 py-1 rounded hover:bg-blue-50"
+            >
+              <Download size={13} />
+              Export
+              <ChevronDown size={11} />
+            </button>
+            {exportOpen && (
+              <div
+                className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 min-w-[120px] py-1"
+                onBlur={() => setExportOpen(false)}
+              >
+                <button
+                  onClick={() => { setExportOpen(false); onExportHtml(); }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 hover:text-blue-600 cursor-pointer"
+                >
+                  <Download size={12} />
+                  Export HTML
+                </button>
+                <button
+                  onClick={() => { setExportOpen(false); onExportPdf(); }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-50 hover:text-emerald-600 cursor-pointer"
+                >
+                  <FileDown size={12} />
+                  Export PDF
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="space-y-3">
           {legs.map(leg => {

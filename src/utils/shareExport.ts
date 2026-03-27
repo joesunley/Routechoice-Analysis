@@ -1,3 +1,5 @@
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Control, Leg, Variant, MapDimensions, IndependentLeg } from '@/types';
 import { BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE } from '@/constants';
 import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from '@/utils/geometry';
@@ -571,5 +573,173 @@ export function exportIndependentLegsHtml({
   document.body.removeChild(a);
   
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ── PDF Export Helpers ───────────────────────────────────────────────────────
+
+const PDF_MAP_W = 720;
+const PDF_MAP_H = 560;
+const PDF_INFO_W = 320;
+const PDF_PAGE_W = PDF_MAP_W + PDF_INFO_W;
+const PDF_PAGE_H = PDF_MAP_H;
+
+/** Renders an SVG string (with map image already inlined) to a canvas element. */
+function svgStringToCanvas(svgStr: string, width: number, height: number): Promise<HTMLCanvasElement> {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { URL.revokeObjectURL(url); reject(new Error('No 2d context')); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      resolve(canvas);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('SVG load failed')); };
+    img.src = url;
+  });
+}
+
+/** Renders an HTML string into a canvas via html2canvas using an off-screen div. */
+async function htmlToCanvas(htmlStr: string, width: number, height: number): Promise<HTMLCanvasElement> {
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = [
+    'position:fixed',
+    'top:-99999px',
+    'left:-99999px',
+    `width:${width}px`,
+    `height:${height}px`,
+    'overflow:hidden',
+    'background:#1e293b',
+    'color:white',
+    'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif',
+    'font-size:14px',
+    'box-sizing:border-box',
+  ].join(';');
+  wrapper.innerHTML = htmlStr;
+  document.body.appendChild(wrapper);
+  try {
+    const canvas = await html2canvas(wrapper, {
+      useCORS: true,
+      scale: 1,
+      width,
+      height,
+      backgroundColor: '#1e293b',
+      logging: false,
+    });
+    return canvas;
+  } finally {
+    document.body.removeChild(wrapper);
+  }
+}
+
+/** Composites a map canvas (left) and info canvas (right) into a single canvas. */
+function compositeCanvases(mapCanvas: HTMLCanvasElement, infoCanvas: HTMLCanvasElement): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = PDF_PAGE_W;
+  canvas.height = PDF_PAGE_H;
+  const ctx = canvas.getContext('2d')!;
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, PDF_PAGE_W, PDF_PAGE_H);
+  ctx.drawImage(mapCanvas, 0, 0);
+  ctx.drawImage(infoCanvas, PDF_MAP_W, 0);
+  return canvas;
+}
+
+// ── Course PDF Export ────────────────────────────────────────────────────────
+
+/** Yields to the browser for one animation frame before continuing. */
+const yieldFrame = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+
+export async function exportSharePdf({
+  mapImage,
+  mapDimensions,
+  controls,
+  legs,
+  variants,
+  dpi,
+  scale,
+  drawingScale,
+  eventName,
+}: ShareExportOptions, onProgress?: (current: number, total: number, label: string) => void, signal?: AbortSignal): Promise<void> {
+  if (legs.length === 0) return;
+
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [PDF_PAGE_W, PDF_PAGE_H] });
+
+  for (let i = 0; i < legs.length; i++) {
+    const leg = legs[i];
+    onProgress?.(i, legs.length, leg.label);
+    await yieldFrame();
+    if (signal?.aborted) return;
+    const legVariants = variants.filter(v => v.legIndex === leg.index);
+
+    // Build SVG with map image inlined
+    const svgStr = generateLegSvg(
+      mapDimensions, controls, legVariants, leg.index, dpi, scale, drawingScale, PDF_MAP_W, PDF_MAP_H,
+    ).replace('href=""', `href="${mapImage}"`);
+
+    const [mapCanvas, infoCanvas] = await Promise.all([
+      svgStringToCanvas(svgStr, PDF_MAP_W, PDF_MAP_H),
+      htmlToCanvas(generateInfoPanel(leg, legVariants, dpi, scale), PDF_INFO_W, PDF_PAGE_H),
+    ]);
+
+    const page = compositeCanvases(mapCanvas, infoCanvas);
+
+    if (i > 0) pdf.addPage([PDF_PAGE_W, PDF_PAGE_H], 'landscape');
+    pdf.addImage(page.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, PDF_PAGE_W, PDF_PAGE_H);
+  }
+
+  onProgress?.(legs.length, legs.length, '');
+  const filename = eventName ? `${eventName} - Routechoice Analysis.pdf` : 'routechoice-analysis.pdf';
+  pdf.save(filename);
+}
+
+// ── Independent Legs PDF Export ──────────────────────────────────────────────
+
+export async function exportIndependentLegsPdf({
+  mapImage,
+  mapDimensions,
+  independentLegs,
+  variants,
+  dpi,
+  scale,
+  drawingScale,
+  eventName,
+}: IndependentShareExportOptions, onProgress?: (current: number, total: number, label: string) => void, signal?: AbortSignal): Promise<void> {
+  if (independentLegs.length === 0) return;
+
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [PDF_PAGE_W, PDF_PAGE_H] });
+
+  for (let i = 0; i < independentLegs.length; i++) {
+    const leg = independentLegs[i];
+    onProgress?.(i, independentLegs.length, leg.label);
+    await yieldFrame();
+    if (signal?.aborted) return;
+    const legVariants = variants.filter(v => v.legIndex === leg.id);
+
+    const svgStr = generateIndependentLegSvg(
+      mapDimensions, leg, legVariants, dpi, scale, drawingScale, PDF_MAP_W, PDF_MAP_H,
+    ).replace('href=""', `href="${mapImage}"`);
+
+    const infoHtml = generateIndependentInfoPanel(leg, legVariants, dpi, scale);
+
+    const [mapCanvas, infoCanvas] = await Promise.all([
+      svgStringToCanvas(svgStr, PDF_MAP_W, PDF_MAP_H),
+      htmlToCanvas(infoHtml, PDF_INFO_W, PDF_PAGE_H),
+    ]);
+
+    const page = compositeCanvases(mapCanvas, infoCanvas);
+
+    if (i > 0) pdf.addPage([PDF_PAGE_W, PDF_PAGE_H], 'landscape');
+    pdf.addImage(page.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, PDF_PAGE_W, PDF_PAGE_H);
+  }
+
+  onProgress?.(independentLegs.length, independentLegs.length, '');
+  const filename = eventName ? `${eventName} - Independent Legs.pdf` : 'independent-legs-analysis.pdf';
+  pdf.save(filename);
 }
 

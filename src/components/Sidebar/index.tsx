@@ -42,7 +42,8 @@ interface SidebarProps {
   resetCourseData: () => void;
   autoRotate: boolean;
   onToggleAutoRotate: () => void;
-  onOpenShare: () => void;
+  onExportHtml: () => void;
+  onExportPdf: () => void;
   eventName: string;
   setEventName: (name: string) => void;
   // Workflow mode
@@ -64,6 +65,7 @@ interface SidebarProps {
   onUpdateIndLegNotes: (id: number, notes: string) => void;
   resetIndependentData: () => void;
   onIndExportShare: () => void;
+  onIndExportPdf: () => void;
 }
 
 export default function Sidebar({
@@ -74,13 +76,13 @@ export default function Sidebar({
   controls, legs,
   variants, deleteVariant, editVariant, selectVariant,
   currentDrawing, selectedLegIndex, setSelectedLegIndex, onUndoPoint, onSaveVariant, onUpdateLegNotes, resetCourseData,
-  autoRotate, onToggleAutoRotate, onOpenShare, eventName, setEventName,
+  autoRotate, onToggleAutoRotate, onExportHtml, onExportPdf, eventName, setEventName,
   workflowMode, setWorkflowMode,
   independentLegs, pendingStart, indVariants, indSelectedLegId,
   onSelectIndLeg, onDeleteIndLeg,
   indCurrentDrawing, onUndoIndPoint, onSaveIndVariant,
   deleteIndVariant, editIndVariant, selectIndVariant,
-  onUpdateIndLegNotes, resetIndependentData, onIndExportShare,
+  onUpdateIndLegNotes, resetIndependentData, onIndExportShare, onIndExportPdf,
 }: SidebarProps) {
   const canDrawVariants = workflowMode === 'course'
     ? controls.length >= 2
@@ -152,7 +154,8 @@ export default function Sidebar({
             scale={scale}
             onUpdateLegNotes={onUpdateLegNotes}
             onSelectVariant={selectVariant}
-            onOpenShare={onOpenShare}
+            onExportHtml={onExportHtml}
+            onExportPdf={onExportPdf}
           />
         )}
 
@@ -198,6 +201,7 @@ export default function Sidebar({
             onUpdateLegNotes={onUpdateIndLegNotes}
             onSelectVariant={selectIndVariant}
             onExportShare={onIndExportShare}
+            onExportPdf={onIndExportPdf}
           />
         )}
 

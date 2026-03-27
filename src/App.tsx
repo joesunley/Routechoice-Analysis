@@ -9,8 +9,7 @@ import Sidebar from '@/components/Sidebar/index';
 import MapWorkspace from '@/components/MapWorkspace';
 import CalibrationModal from '@/components/CalibrationModal';
 import BaseModal from '@/components/BaseModal';
-import ShareView from '@/components/ShareView';
-import { exportIndependentLegsHtml } from '@/utils/shareExport';
+import { exportShareHtml, exportSharePdf, exportIndependentLegsHtml, exportIndependentLegsPdf } from '@/utils/shareExport';
 import { AppMode, MapDimensions, PanState, Point, WorkflowMode } from '@/types';
 
 export default function App() {
@@ -32,9 +31,9 @@ export default function App() {
   const [mouseDownPos, setMouseDownPos] = useState<PanState>({ x: 0, y: 0 });
   const isMouseDownRef = useRef(false);
   const [showResetConfirmation, setShowResetConfirmation] = useState(false);
-  const [showIndResetConfirmation, setShowIndResetConfirmation] = useState(false);
-  const [autoRotate, setAutoRotate] = useState(false);
-  const [showShareView, setShowShareView] = useState(false);
+  const [showIndResetConfirmation, setShowIndResetConfirmation] = useState(false);  const [autoRotate, setAutoRotate] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number; label: string } | null>(null);
+  const pdfAbortRef = useRef<AbortController | null>(null);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -279,6 +278,44 @@ export default function App() {
       drawingScale,
       eventName,
     });
+  };
+
+  const handleIndExportPdf = async () => {
+    if (!mapImage)
+      return;
+
+    const controller = new AbortController();
+    pdfAbortRef.current = controller;
+    await exportIndependentLegsPdf({
+      mapImage,
+      mapDimensions,
+      independentLegs: indLegs.independentLegs,
+      variants: indVariants,
+      dpi,
+      scale,
+      drawingScale,
+      eventName,
+    }, (current, total, label) => setPdfProgress(current < total ? { current, total, label } : null), controller.signal);
+    setPdfProgress(null);
+    pdfAbortRef.current = null;
+  };
+
+  const handleExportHtml = () => {
+    if (!mapImage) return;
+    exportShareHtml({ mapImage, mapDimensions, controls, legs, variants, dpi, scale, drawingScale, eventName });
+  };
+
+  const handleExportPdf = async () => {
+    if (!mapImage) return;
+    const controller = new AbortController();
+    pdfAbortRef.current = controller;
+    await exportSharePdf(
+      { mapImage, mapDimensions, controls, legs, variants, dpi, scale, drawingScale, eventName },
+      (current, total, label) => setPdfProgress(current < total ? { current, total, label } : null),
+      controller.signal,
+    );
+    setPdfProgress(null);
+    pdfAbortRef.current = null;
   };
 
   const handleSetWorkflowMode = (m: WorkflowMode) => {
@@ -817,7 +854,6 @@ export default function App() {
         deleteVariant={deleteVariant}
         editVariant={editVariant}
         selectVariant={handleSelectVariant}
-        onOpenShare={() => setShowShareView(true)}
         currentDrawing={currentDrawing}
         selectedLegIndex={selectedLegIndex}
         setSelectedLegIndex={handleSetSelectedLegIndex}
@@ -827,6 +863,8 @@ export default function App() {
         resetCourseData={confirmResetCourseData}
         autoRotate={autoRotate}
         onToggleAutoRotate={handleToggleAutoRotate}
+        onExportHtml={handleExportHtml}
+        onExportPdf={handleExportPdf}
         eventName={eventName}
         setEventName={setEventName}
         workflowMode={workflowMode}
@@ -846,6 +884,7 @@ export default function App() {
         onUpdateIndLegNotes={handleUpdateIndLegNotes}
         resetIndependentData={confirmResetIndependentData}
         onIndExportShare={handleIndExportShare}
+        onIndExportPdf={handleIndExportPdf}
       />      
 
       <MapWorkspace
@@ -950,20 +989,34 @@ export default function App() {
           <p className="text-slate-600">Are you sure you want to reset all independent leg data? This action cannot be undone.</p>
         </BaseModal>
       )}
-      
-      {showShareView && mapImage && (
-        <ShareView
-          mapImage={mapImage}
-          mapDimensions={mapDimensions}
-          controls={controls}
-          legs={legs}
-          variants={variants}
-          dpi={dpi}
-          scale={scale}
-          drawingScale={drawingScale}
-          eventName={eventName}
-          onClose={() => setShowShareView(false)}
-        />
+
+      {pdfProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-slate-800 text-white rounded-2xl shadow-2xl p-8 w-80 flex flex-col gap-5">
+            <div className="flex items-center gap-3">
+              <div className="w-5 h-5 rounded-full border-2 border-slate-600 border-t-emerald-400 animate-spin shrink-0" />
+              <span className="font-semibold text-base">Generating PDF…</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${Math.round((pdfProgress.current / pdfProgress.total) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span className="truncate max-w-[180px]">{pdfProgress.label}</span>
+                <span className="shrink-0 ml-2 font-mono">{pdfProgress.current} / {pdfProgress.total}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => { pdfAbortRef.current?.abort(); setPdfProgress(null); }}
+              className="mt-1 w-full py-2 rounded-lg border border-slate-600 text-slate-300 text-sm font-medium hover:bg-slate-700 hover:text-white transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
