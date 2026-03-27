@@ -1,17 +1,17 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { useViewport } from './hooks/useViewport';
-import { useControls } from './hooks/useControls';
-import { useVariants } from './hooks/useVariants';
-import { useVariantLabels } from './hooks/useVariantLabels';
-import { useIndependentLegs } from './hooks/useIndependentLegs';
-import { calcPixelDistance, calculateDpiFromPoints, pixelsToMeters } from './utils/geometry';
-import Sidebar from './components/Sidebar/index';
-import MapWorkspace from './components/MapWorkspace';
-import CalibrationModal from './components/CalibrationModal';
-import BaseModal from './components/BaseModal';
-import ShareView from './components/ShareView';
-import { exportIndependentLegsHtml } from './utils/shareExport';
-import { AppMode, MapDimensions, PanState, Point, WorkflowMode } from './types';
+import { useViewport } from '@/hooks/useViewport';
+import { useControls } from '@/hooks/useControls';
+import { useVariants } from '@/hooks/useVariants';
+import { useVariantLabels } from '@/hooks/useVariantLabels';
+import { useIndependentLegs } from '@/hooks/useIndependentLegs';
+import { calcPixelDistance, calculateDpiFromPoints, pixelsToMeters } from '@/utils/geometry';
+import Sidebar from '@/components/Sidebar/index';
+import MapWorkspace from '@/components/MapWorkspace';
+import CalibrationModal from '@/components/CalibrationModal';
+import BaseModal from '@/components/BaseModal';
+import ShareView from '@/components/ShareView';
+import { exportIndependentLegsHtml } from '@/utils/shareExport';
+import { AppMode, MapDimensions, PanState, Point, WorkflowMode } from '@/types';
 
 export default function App() {
   const [mapImage, setMapImage] = useState<string | null>(null);
@@ -39,11 +39,14 @@ export default function App() {
   const svgRef = useRef<SVGSVGElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const loadDataRef = useRef<HTMLInputElement>(null);
-  const { zoom, setZoom, pan, setPan, workspaceRef, viewportState, resetZoom, zoomToCenter } = useViewport(mapDimensions);  const {
+
+  const { zoom, setZoom, pan, setPan, workspaceRef, viewportState, resetZoom, zoomToCenter } = useViewport(mapDimensions);  
+  const {
     controls, setControls,
     isAltDragging, draggedControlId,
     addControl, tryStartAltDrag, moveAltDraggedControl, endAltDrag,
-  } = useControls();  const {
+  } = useControls();  
+  const {
     variants, setVariants,
     currentDrawing, setCurrentDrawing,
     selectedLegIndex, setSelectedLegIndex,
@@ -82,19 +85,28 @@ export default function App() {
   const mapRotation = useMemo(() => {
     if (!autoRotate) return 0;
     if (workflowMode === 'course') {
-      if (mode !== 'variants' || selectedLegIndex < 0 || selectedLegIndex >= controls.length - 1) return 0;
+      if (mode !== 'variants' || selectedLegIndex < 0 || selectedLegIndex >= controls.length - 1) 
+        return 0;
+
       const c1 = controls[selectedLegIndex];
       const c2 = controls[selectedLegIndex + 1];
+      
       const dx = c2.x - c1.x;
       const dy = c2.y - c1.y;
-      return -(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
+      
+      return (Math.atan2(dy, dx) * (180 / Math.PI) + 90) * -1;
     } else {
-      if (mode !== 'variants') return 0;
+      if (mode !== 'variants') 
+        return 0;
+
       const leg = indLegs.independentLegs.find(l => l.id === indSelectedLegIndex);
-      if (!leg) return 0;
+      if (!leg) 
+        return 0;
+
       const dx = leg.end.x - leg.start.x;
       const dy = leg.end.y - leg.start.y;
-      return -(Math.atan2(dy, dx) * (180 / Math.PI) + 90);
+      
+      return (Math.atan2(dy, dx) * (180 / Math.PI) + 90) * -1;
     }
   }, [autoRotate, mode, workflowMode, selectedLegIndex, controls, indLegs.independentLegs, indSelectedLegIndex]);
 
@@ -104,13 +116,16 @@ export default function App() {
 
   const zoomToLeg = (legIdx: number) => {
     const workspace = workspaceRef.current;
-    if (!workspace || legIdx < 0 || legIdx >= controls.length - 1) return;
+    if (!workspace || legIdx < 0 || legIdx >= controls.length - 1) 
+      return;
+
     const rect = workspace.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
 
     const c1 = controls[legIdx];
     const c2 = controls[legIdx + 1];
+
     // Compute the rotation that will be applied for this leg
     const rotDeg = -(Math.atan2(c2.y - c1.y, c2.x - c1.x) * (180 / Math.PI) + 90);
     const theta = rotDeg * Math.PI / 180;
@@ -124,21 +139,27 @@ export default function App() {
     const midY = allPoints.reduce((s, p) => s + p.y, 0) / allPoints.length;
 
     // Maximum extents in rotated screen space (for fitting zoom)
-    const padding = 140;
     let maxRx = 0;
     let maxRy = 0;
+    
     for (const p of allPoints) {
       const dx = p.x - midX;
       const dy = p.y - midY;
+      
       const rx = Math.abs(dx * Math.cos(theta) - dy * Math.sin(theta));
       const ry = Math.abs(dx * Math.sin(theta) + dy * Math.cos(theta));
+      
       if (rx > maxRx) maxRx = rx;
       if (ry > maxRy) maxRy = ry;
     }
+    
+    const padding = 140;
+    const minZoom = 0.01;
+    const maxZoom = 50;
 
-    const fitZoomX = maxRx > 0 ? (cx - padding) / maxRx : 50;
-    const fitZoomY = maxRy > 0 ? (cy - padding) / maxRy : 50;
-    const newZoom = Math.max(0.01, Math.min(Math.min(fitZoomX, fitZoomY), 50));
+    const fitZoomX = maxRx > 0 ? (cx - padding) / maxRx : maxZoom;
+    const fitZoomY = maxRy > 0 ? (cy - padding) / maxRy : maxZoom;
+    const newZoom = Math.max(minZoom, Math.min(Math.min(fitZoomX, fitZoomY), maxZoom));
 
     setZoom(newZoom);
     setPan({
@@ -149,41 +170,62 @@ export default function App() {
 
   const zoomToIndependentLeg = (legId: number) => {
     const leg = indLegs.independentLegs.find(l => l.id === legId);
-    if (!leg) return;
+    if (!leg) 
+      return;
+
     const workspace = workspaceRef.current;
-    if (!workspace) return;
+    if (!workspace) 
+      return;
+
     const rect = workspace.getBoundingClientRect();
     const cx = rect.width / 2;
     const cy = rect.height / 2;
+
     const rotDeg = -(Math.atan2(leg.end.y - leg.start.y, leg.end.x - leg.start.x) * (180 / Math.PI) + 90);
     const theta = rotDeg * Math.PI / 180;
+
     const legVariants = indVariants.filter(v => v.legIndex === legId);
     const allPoints = [leg.start, leg.end, ...legVariants.flatMap(v => v.points)];
+
     const midX = allPoints.reduce((s, p) => s + p.x, 0) / allPoints.length;
     const midY = allPoints.reduce((s, p) => s + p.y, 0) / allPoints.length;
-    const padding = 140;
+
     let maxRx = 0;
     let maxRy = 0;
+    
     for (const p of allPoints) {
       const dx = p.x - midX;
       const dy = p.y - midY;
+      
       const rx = Math.abs(dx * Math.cos(theta) - dy * Math.sin(theta));
       const ry = Math.abs(dx * Math.sin(theta) + dy * Math.cos(theta));
+      
       if (rx > maxRx) maxRx = rx;
       if (ry > maxRy) maxRy = ry;
     }
-    const fitZoomX = maxRx > 0 ? (cx - padding) / maxRx : 50;
-    const fitZoomY = maxRy > 0 ? (cy - padding) / maxRy : 50;
-    const newZoom = Math.max(0.01, Math.min(Math.min(fitZoomX, fitZoomY), 50));
+
+    const padding = 140;
+    const minZoom = 0.01;
+    const maxZoom = 50;
+
+    const fitZoomX = maxRx > 0 ? (cx - padding) / maxRx : maxZoom;
+    const fitZoomY = maxRy > 0 ? (cy - padding) / maxRy : maxZoom;
+    const newZoom = Math.max(minZoom, Math.min(Math.min(fitZoomX, fitZoomY), maxZoom));
+
     setZoom(newZoom);
-    setPan({ x: cx - midX * newZoom, y: cy - midY * newZoom });
+    setPan({ 
+      x: cx - midX * newZoom, 
+      y: cy - midY * newZoom 
+    });
   };
 
   const handleSetIndSelectedLeg = (legId: number) => {
     indLegs.setSelectedLegId(legId);
     setIndSelectedLegIndex(legId);
     setIndCurrentDrawing([]);
-    if (autoRotate) zoomToIndependentLeg(legId);
+
+    if (autoRotate) 
+      zoomToIndependentLeg(legId);
   };
 
   const handleDeleteIndLeg = (id: number) => {
@@ -206,8 +248,11 @@ export default function App() {
   const handleSelectIndVariant = (variantId: number) => {
     setIndVariants(prev => {
       const variant = prev.find(v => v.id === variantId);
-      if (!variant) return prev;
+      if (!variant) 
+        return prev;
+
       const isCurrentlyChosen = variant.chosen === true;
+      
       return prev.map(v =>
         v.legIndex === variant.legIndex
           ? { ...v, chosen: isCurrentlyChosen ? false : v.id === variantId }
@@ -221,7 +266,9 @@ export default function App() {
   };
 
   const handleIndExportShare = () => {
-    if (!mapImage) return;
+    if (!mapImage) 
+      return;
+
     exportIndependentLegsHtml({
       mapImage,
       mapDimensions,
@@ -242,44 +289,75 @@ export default function App() {
   const handleToggleAutoRotate = () => {
     const next = !autoRotate;
     setAutoRotate(next);
+
     if (next) {
-      if (workflowMode === 'course') zoomToLeg(selectedLegIndex);
-      else if (indLegs.selectedLegId !== null) zoomToIndependentLeg(indLegs.selectedLegId);
+      if (workflowMode === 'course') 
+        zoomToLeg(selectedLegIndex);
+      else if (indLegs.selectedLegId !== null) 
+        zoomToIndependentLeg(indLegs.selectedLegId);
     }
   };
 
   const handleSetSelectedLegIndex = (i: number) => {
     setSelectedLegIndex(i);
     setCurrentDrawing([]);
-    if (autoRotate) zoomToLeg(i);
+
+    if (autoRotate)
+      zoomToLeg(i);
   };
 
   // Wrapper: save an independent-leg variant with start/end pinned to leg controls
-  const handleIndFinishVariantWithPin = (pointsOverride: import('./types').Point[] | null = null) => {
+  const handleIndFinishVariantWithPin = (pointsOverride: import('@/types').Point[] | null = null) => {
     const rawPoints = pointsOverride ?? indCurrentDrawing;
     const leg = indLegs.independentLegs.find(l => l.id === indLegs.selectedLegId);
-    if (!leg) { indHandleFinishVariant(rawPoints); return; }
-    let pinned: import('./types').Point[];
-    if (indEditingVariantId !== null) {
-      if (rawPoints.length < 2) { indHandleFinishVariant(rawPoints); return; }
-      pinned = [{ x: leg.start.x, y: leg.start.y }, ...rawPoints.slice(1, -1), { x: leg.end.x, y: leg.end.y }];
-    } else {
-      pinned = [...rawPoints, { x: leg.end.x, y: leg.end.y }];
+
+    if (!leg) { 
+      indHandleFinishVariant(rawPoints); 
+      return; 
     }
-    if (pinned.length < 2) { indHandleFinishVariant(rawPoints); return; }
+
+    let pinned: import('@/types').Point[];
+    
+    if (indEditingVariantId !== null) {
+      if (rawPoints.length < 2) { 
+        indHandleFinishVariant(rawPoints);
+        return; 
+      }
+
+      pinned = [
+        { x: leg.start.x, y: leg.start.y }, 
+        ...rawPoints.slice(1, -1), 
+        { x: leg.end.x, y: leg.end.y }
+      ];
+    } else {
+      pinned = [
+        ...rawPoints, 
+        { x: leg.end.x, y: leg.end.y }
+      ];
+    }
+
+    if (pinned.length < 2) { 
+      indHandleFinishVariant(rawPoints); 
+      return; 
+    }
+
     indHandleFinishVariant(pinned);
   };
 
   // --- Map Loading ---
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) 
+      return;
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
+
       img.onload = () => {
         setMapDimensions({ width: img.width, height: img.height });
         setMapImage(event.target?.result as string);
+
         const availableWidth = window.innerWidth - 320;
         const availableHeight = window.innerHeight;
         const fitZoom = Math.min(availableWidth / img.width, availableHeight / img.height) * 0.90;
@@ -296,10 +374,12 @@ export default function App() {
   const finalizeCalibration = () => {
     const pxDist = calcPixelDistance(calibrationPoints[0], calibrationPoints[1]);
     const meters = parseFloat(tempCalibrationValue);
+
     if (!isNaN(meters) && meters > 0) {
       setDpi(Math.round(calculateDpiFromPoints(pxDist, meters, scale)));
       setMode('controls');
     }
+
     setCalibrationPoints([]);
     setShowCalibrationModal(false);
   };
@@ -316,12 +396,15 @@ export default function App() {
     a.href = url;
     a.download = 'course_planning_data.json';
     a.click();
+
     URL.revokeObjectURL(url);
   };
 
   const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) 
+      return;
+
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -335,18 +418,15 @@ export default function App() {
         if (data.eventName) setEventName(data.eventName);
         if (data.independentLegs) indLegs.setIndependentLegs(data.independentLegs);
         if (data.independentVariants) setIndVariants(data.independentVariants);
-      } catch (_) {}
+      } 
+      catch (_) {}
     };
     reader.readAsText(file);
   };
 
   // --- Reset Functionality ---
-  const confirmResetCourseData = () => {
-    setShowResetConfirmation(true);
-  };
-  const confirmResetIndependentData = () => {
-    setShowIndResetConfirmation(true);
-  };
+  const confirmResetCourseData = () => setShowResetConfirmation(true);
+  const confirmResetIndependentData = () => setShowIndResetConfirmation(true);
   const handleResetConfirm = () => {
     setControls([]);
     setVariants([]);
@@ -382,7 +462,8 @@ export default function App() {
   const handleSelectVariant = (variantId: number) => {
     setVariants(prev => {
       const variant = prev.find(v => v.id === variantId);
-      if (!variant) return prev;
+      if (!variant) 
+        return prev;
       
       // If already chosen, uncheck it. Otherwise, mark it and uncheck others in the same leg
       const isCurrentlyChosen = variant.chosen === true;
@@ -399,10 +480,15 @@ export default function App() {
     return controls.slice(0, -1).map((p1, i) => {
       const p2 = controls[i + 1];
       const getLabel = (idx: number) => {
-        if (idx === 0) return 'S';
-        if (idx === controls.length - 1) return 'F';
+        if (idx === 0) 
+          return 'S';
+        
+        if (idx === controls.length - 1) 
+          return 'F';
+
         return idx.toString();
       };
+
       return {
         index: i,
         start: p1,
@@ -416,10 +502,13 @@ export default function App() {
 
   const screenToImageCoords = (clientX: number, clientY: number): { x: number; y: number } => {
     const workspace = workspaceRef.current;
-    if (!workspace) return { x: 0, y: 0 };
+    if (!workspace) 
+      return { x: 0, y: 0 };
+
     const rect = workspace.getBoundingClientRect();
     let wx = clientX - rect.left;
     let wy = clientY - rect.top;
+
     if (mapRotation !== 0) {
       const theta = mapRotation * Math.PI / 180;
       const cx = rect.width / 2;
@@ -429,6 +518,7 @@ export default function App() {
       wx = relX * Math.cos(theta) + relY * Math.sin(theta) + cx;
       wy = -relX * Math.sin(theta) + relY * Math.cos(theta) + cy;
     }
+
     return {
       x: (wx - pan.x) / zoom,
       y: (wy - pan.y) / zoom,
@@ -460,22 +550,31 @@ export default function App() {
   };
 
   const handleMapClick = (e: React.MouseEvent) => {
-    if (!mapImage || showCalibrationModal || e.altKey) return;
-    if (handleShiftClick(e)) return;
+    if (!mapImage || showCalibrationModal || e.altKey) 
+      return;
+
+    if (handleShiftClick(e)) 
+      return;
 
     const { x, y } = screenToImageCoords(e.clientX, e.clientY);
-    if (x < 0 || x > mapDimensions.width || y < 0 || y > mapDimensions.height) return;
+
+    if (x < 0 || x > mapDimensions.width || y < 0 || y > mapDimensions.height) 
+      return;
 
     if (workflowMode === 'course') {
       if (mode === 'controls') {
         addControl(x, y);
       } else if (mode === 'variants') {
-        if (controls.length < 2) return;
+        if (controls.length < 2) 
+          return;
+
         addDrawingPoint(x, y);
       } else if (mode === 'calibrate') {
         const newPoints = [...calibrationPoints, { x, y }];
         setCalibrationPoints(newPoints);
-        if (newPoints.length === 2) setShowCalibrationModal(true);
+
+        if (newPoints.length === 2) 
+          setShowCalibrationModal(true);
       }
     } else {
       // independent workflow
@@ -484,10 +583,13 @@ export default function App() {
           indLegs.handleFirstClick(x, y);
         } else {
           const newId = indLegs.handleSecondClick(x, y);
-          if (newId > 0) setIndSelectedLegIndex(newId);
+          if (newId > 0) 
+            setIndSelectedLegIndex(newId);
         }
       } else if (mode === 'variants') {
-        if (indLegs.independentLegs.length === 0) return;
+        if (indLegs.independentLegs.length === 0) 
+          return;
+
         const activeLeg = indLegs.independentLegs.find(l => l.id === indLegs.selectedLegId);
         if (indCurrentDrawing.length === 0 && activeLeg) {
           indAddDrawingPoint(activeLeg.start.x, activeLeg.start.y);
@@ -496,32 +598,52 @@ export default function App() {
       } else if (mode === 'calibrate') {
         const newPoints = [...calibrationPoints, { x, y }];
         setCalibrationPoints(newPoints);
-        if (newPoints.length === 2) setShowCalibrationModal(true);
+
+        if (newPoints.length === 2) 
+          setShowCalibrationModal(true);
       }
     }
   };
   // --- Mouse Handlers ---
   const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.no-drag')) return;
-    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('.no-drag')) 
+      return;
+
+    if (e.button !== 0) 
+      return;
+    
     isMouseDownRef.current = true;
     const { x: mapX, y: mapY } = screenToImageCoords(e.clientX, e.clientY);
+
     if (e.altKey) {
       if (workflowMode === 'course') {
-        if (tryStartAltDrag(mapX, mapY, zoom)) return;
-        if (mode === 'variants' && tryStartAltDragPoint(mapX, mapY, zoom)) return;
-        if (mode === 'variants' && tryStartAltDragLabel(mapX, mapY, zoom, variants, selectedLegIndex)) return;
+        if (tryStartAltDrag(mapX, mapY, zoom)) 
+          return;
+
+        if (mode === 'variants' && tryStartAltDragPoint(mapX, mapY, zoom)) 
+          return;
+
+        if (mode === 'variants' && tryStartAltDragLabel(mapX, mapY, zoom, variants, selectedLegIndex)) 
+          return;
       } else {
-        if (indLegs.tryStartAltDrag(mapX, mapY, zoom)) return;
-        if (mode === 'variants' && indTryStartAltDragPoint(mapX, mapY, zoom)) return;
-        if (mode === 'variants' && indTryStartAltDragLabel(mapX, mapY, zoom, indVariants, indSelectedLegIndex)) return;
+        if (indLegs.tryStartAltDrag(mapX, mapY, zoom)) 
+          return;
+
+        if (mode === 'variants' && indTryStartAltDragPoint(mapX, mapY, zoom)) 
+          return;
+        
+        if (mode === 'variants' && indTryStartAltDragLabel(mapX, mapY, zoom, indVariants, indSelectedLegIndex)) 
+          return;
       }
     }
+
     setDragStart({ x: e.clientX, y: e.clientY });
     setMouseDownPos({ x: e.clientX, y: e.clientY });
   };
     const handleMouseMove = (e: React.MouseEvent) => {
-    if (mode !== 'controls' && mode !== 'variants') return;
+    if (mode !== 'controls' && mode !== 'variants') 
+      return;
+
     if (workflowMode === 'course') {
       if (isAltDraggingPoint && draggedPointIndex !== null) {
         const { x: imgX, y: imgY } = screenToImageCoords(e.clientX, e.clientY);
@@ -556,13 +678,17 @@ export default function App() {
         indLegs.moveAltDraggedControl(imgX, imgY);
         if (indLegs.draggedLegId !== null) {
           setIndVariants(prev => prev.map(v => {
-            if (v.legIndex !== indLegs.draggedLegId || v.points.length === 0) return v;
+            if (v.legIndex !== indLegs.draggedLegId || v.points.length === 0) 
+              return v;
+
             if (indLegs.draggedEndpoint === 'start') {
               return { ...v, points: [{ x: imgX, y: imgY }, ...v.points.slice(1)] };
             }
+
             if (indLegs.draggedEndpoint === 'end') {
               return { ...v, points: [...v.points.slice(0, -1), { x: imgX, y: imgY }] };
             }
+
             return v;
           }));
           if (indLegs.draggedEndpoint === 'start' && indCurrentDrawing.length > 0) {
@@ -599,50 +725,74 @@ export default function App() {
     const isAnyCourseAltDrag = isAltDraggingPoint || isAltDraggingLabel || isAltDragging;
     const isAnyIndAltDrag = isIndAltDraggingPoint || isIndAltDraggingLabel || indLegs.isAltDragging;
     if (workflowMode === 'course' && isAnyCourseAltDrag) {
-      if (isAltDraggingPoint) endAltDragPoint();
-      else if (isAltDraggingLabel) endAltDragLabel();
-      else endAltDrag();
+      if (isAltDraggingPoint) 
+        endAltDragPoint();
+      else if (isAltDraggingLabel) 
+        endAltDragLabel();
+      else 
+        endAltDrag();
+
       setIsDragging(false);
       return;
     }
     if (workflowMode === 'independent' && isAnyIndAltDrag) {
-      if (isIndAltDraggingPoint) indEndAltDragPoint();
-      else if (isIndAltDraggingLabel) indEndAltDragLabel();
-      else indLegs.endAltDrag();
+      if (isIndAltDraggingPoint) 
+        indEndAltDragPoint();
+      else if (isIndAltDraggingLabel) 
+        indEndAltDragLabel();
+      else 
+        indLegs.endAltDrag();
+
       setIsDragging(false);
       return;
     }
+
     const dist = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y);
     if (dist < 5) {
       handleMapClick(e);
     }
+    
     setIsDragging(false);
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (mode !== 'variants') return;
+    if (mode !== 'variants') 
+      return;
+
     const activeDrawing = workflowMode === 'course' ? currentDrawing : indCurrentDrawing;
+
     if (activeDrawing.length >= 1) {
       const { x, y } = screenToImageCoords(e.clientX, e.clientY);
+
       const last = activeDrawing[activeDrawing.length - 1];
       const dist = calcPixelDistance(last, { x, y });
+
       const finalPoints = dist > 10 ? [...activeDrawing, { x, y }] : activeDrawing;
+
       if (finalPoints.length >= 2) {
-        if (workflowMode === 'course') handleFinishVariant(finalPoints);
-        else handleIndFinishVariantWithPin(finalPoints);
+        if (workflowMode === 'course') 
+          handleFinishVariant(finalPoints);
+        else 
+          handleIndFinishVariantWithPin(finalPoints);
       } else {
-        if (workflowMode === 'course') setCurrentDrawing([]);
-        else setIndCurrentDrawing([]);
+        if (workflowMode === 'course') 
+          setCurrentDrawing([]);
+        else 
+          setIndCurrentDrawing([]);
       }
     }
   };  const getCursor = (): string => {
     if (workflowMode === 'course') {
-      if (isAltDraggingPoint || isAltDraggingLabel || isAltDragging) return 'grabbing';
+      if (isAltDraggingPoint || isAltDraggingLabel || isAltDragging) 
+        return 'grabbing';
     } else {
-      if (isIndAltDraggingPoint || isIndAltDraggingLabel || indLegs.isAltDragging) return 'grabbing';
+      if (isIndAltDraggingPoint || isIndAltDraggingLabel || indLegs.isAltDragging) 
+        return 'grabbing';
     }
-    if (isDragging) return 'grabbing';
+    if (isDragging) 
+      return 'grabbing';
+
     return 'crosshair';
   };
 
@@ -696,7 +846,9 @@ export default function App() {
         onUpdateIndLegNotes={handleUpdateIndLegNotes}
         resetIndependentData={confirmResetIndependentData}
         onIndExportShare={handleIndExportShare}
-      />      <MapWorkspace
+      />      
+
+      <MapWorkspace
         workspaceRef={workspaceRef}
         mapImage={mapImage}
         mapDimensions={mapDimensions}
@@ -735,6 +887,7 @@ export default function App() {
         isIndAltDraggingLabel={isIndAltDraggingLabel}
         indEditingVariantId={indEditingVariantId}
       />
+
       {showCalibrationModal && (
         <CalibrationModal
           value={tempCalibrationValue}
@@ -742,7 +895,9 @@ export default function App() {
           onApply={finalizeCalibration}
           onCancel={() => { setShowCalibrationModal(false); setCalibrationPoints([]); setMode('controls'); }}
         />
-      )}      {showResetConfirmation && (
+      )}      
+      
+      {showResetConfirmation && (
         <BaseModal
           isOpen={showResetConfirmation}
           title="Confirm Reset"
@@ -768,6 +923,7 @@ export default function App() {
           <p className="text-slate-600">Are you sure you want to reset all course data? This action cannot be undone.</p>
         </BaseModal>
       )}
+
       {showIndResetConfirmation && (
         <BaseModal
           isOpen={showIndResetConfirmation}
@@ -794,6 +950,7 @@ export default function App() {
           <p className="text-slate-600">Are you sure you want to reset all independent leg data? This action cannot be undone.</p>
         </BaseModal>
       )}
+      
       {showShareView && mapImage && (
         <ShareView
           mapImage={mapImage}

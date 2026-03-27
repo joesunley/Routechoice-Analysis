@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Control, IndependentLeg } from '../types';
-import { calcPixelDistance } from '../utils/geometry';
+import { Control, IndependentLeg } from '@/types';
+import { calcPixelDistance } from '@/utils/geometry';
 
 export function useIndependentLegs() {
   const [independentLegs, setIndependentLegs] = useState<IndependentLeg[]>([]);
@@ -15,25 +15,28 @@ export function useIndependentLegs() {
   };
 
   const handleSecondClick = (x: number, y: number): number => {
-    if (!pendingStart) return -1;
+    if (!pendingStart) 
+      return -1;
+
     const ts = Date.now();
     const end: Control = { id: ts + 1, x, y };
     const newId = ts + 2;
-    // capture current length for label (setState is async, so use closure value directly)
-    let nextLabel = '';
+
     setIndependentLegs(prev => {
-      nextLabel = `Leg ${prev.length + 1}`;
       const newLeg: IndependentLeg = {
         id: newId,
-        label: nextLabel,
+        label: `Leg ${prev.length + 1}`,
         start: pendingStart,
         end,
         straightLength: calcPixelDistance(pendingStart, end),
       };
+
       return [...prev, newLeg];
     });
+    
     setPendingStart(null);
     setSelectedLegId(newId);
+
     return newId;
   };
 
@@ -46,6 +49,7 @@ export function useIndependentLegs() {
       const filtered = prev.filter(l => l.id !== id);
       return filtered.map((l, i) => ({ ...l, label: `Leg ${i + 1}` }));
     });
+
     setSelectedLegId(prev => (prev === id ? null : prev));
   };
 
@@ -64,12 +68,15 @@ export function useIndependentLegs() {
   const tryStartAltDrag = (mapX: number, mapY: number, zoom: number): boolean => {
     const threshold = 50 / zoom;
     let best: { legId: number; endpoint: 'start' | 'end'; dist: number } | null = null;
+
     for (const leg of independentLegs) {
       const ds = calcPixelDistance({ x: mapX, y: mapY }, leg.start);
       const de = calcPixelDistance({ x: mapX, y: mapY }, leg.end);
+
       if (ds < threshold && (!best || ds < best.dist)) {
         best = { legId: leg.id, endpoint: 'start', dist: ds };
       }
+
       if (de < threshold && (!best || de < best.dist)) {
         best = { legId: leg.id, endpoint: 'end', dist: de };
       }
@@ -80,16 +87,22 @@ export function useIndependentLegs() {
       setDraggedEndpoint(best.endpoint);
       return true;
     }
+
     return false;
   };
 
   const moveAltDraggedControl = (x: number, y: number) => {
-    if (draggedLegId === null || draggedEndpoint === null) return;
+    if (draggedLegId === null || draggedEndpoint === null) 
+      return;
+
     setIndependentLegs(prev =>
       prev.map(l => {
-        if (l.id !== draggedLegId) return l;
+        if (l.id !== draggedLegId) 
+          return l;
+
         const newStart = draggedEndpoint === 'start' ? { ...l.start, x, y } : l.start;
         const newEnd = draggedEndpoint === 'end' ? { ...l.end, x, y } : l.end;
+        
         return { ...l, start: newStart, end: newEnd, straightLength: calcPixelDistance(newStart, newEnd) };
       })
     );

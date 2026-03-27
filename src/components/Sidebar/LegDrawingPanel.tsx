@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
-import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
-import { Leg, Point } from '../../types';
+import { pixelsToMeters, calcTotalPixelDistance } from '@/utils/geometry';
+import { Leg, Point } from '@/types';
 
 interface LegDrawingPanelProps {
   legs: Leg[];

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import BaseModal from './BaseModal';
+import BaseModal from '@/components/BaseModal';
 
 interface LegNotesModalProps {
   isOpen: boolean;

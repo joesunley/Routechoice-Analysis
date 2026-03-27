@@ -1,7 +1,7 @@
 import React from 'react';
 import { Map, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
-import MapOverlay from './MapOverlay';
-import { Control, Variant, Point, MapDimensions, PanState, AppMode, IndependentLeg, WorkflowMode } from '../types';
+import MapOverlay from '@/components/MapOverlay';
+import { Control, Variant, Point, MapDimensions, PanState, AppMode, IndependentLeg, WorkflowMode } from '@/types';
 
 interface MapWorkspaceProps {
   workspaceRef: React.RefObject<HTMLDivElement | null>;
@@ -99,7 +99,8 @@ export default function MapWorkspace({
             <span>Click two points on the map to calculate DPI. You'll then enter the distance between them in meters.</span>
           </div>
         </div>
-      )}d
+      )}
+
       {!mapImage && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-8 text-center">          <Map size={64} className="mb-4 opacity-20" />
           <h2 className="text-xl font-bold text-slate-400">No Map Loaded</h2>
@@ -107,7 +108,9 @@ export default function MapWorkspace({
             Upload an orienteering map image to start planning your course and analyzing routechoices.
           </p>
         </div>
-      )}      {mapImage && (
+      )}      
+      
+      {mapImage && (
         <div
           className="absolute inset-0"
           style={mapRotation !== 0 ? { transform: `rotate(${mapRotation}deg)`, transformOrigin: 'center center' } : undefined}
@@ -151,7 +154,9 @@ export default function MapWorkspace({
           />
         </div>
         </div>
-      )}      {/* Floating Zoom Controls */}
+      )}     
+      
+      {/* Floating Zoom Controls */}
       {mapImage && (
         <div className="absolute bottom-6 right-6 flex items-center gap-1 bg-white rounded-full shadow-lg border border-slate-200 p-1.5 z-9 no-drag">
           <button

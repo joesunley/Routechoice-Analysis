@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
-import { Point, Variant } from '../types';
-import { VARIANT_COLORS } from '../constants';
-import { calcPixelDistance } from '../utils/geometry';
+import { Point, Variant } from '@/types';
+import { VARIANT_COLORS } from '@/constants';
+import { calcPixelDistance } from '@/utils/geometry';
 
 export function useVariants() {
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -17,6 +17,7 @@ export function useVariants() {
     setCurrentDrawing(prev => {
       const next = [...prev, { x, y }];
       currentDrawingRef.current = next;
+
       return next;
     });
   };
@@ -30,6 +31,7 @@ export function useVariants() {
       setCurrentDrawing([]);
       return;
     }
+
     setVariants(prev => {
       // If editing an existing variant, update it with new points but preserve color and name
       if (editingVariantId !== null && editingVariantMetadata) {
@@ -48,15 +50,19 @@ export function useVariants() {
       const existingLegVariants = prev.filter(v => v.legIndex === selectedLegIndex);
       const color = VARIANT_COLORS[existingLegVariants.length % VARIANT_COLORS.length];
       const name = String.fromCharCode(65 + existingLegVariants.length);
+
       return [...prev, { id: Date.now(), legIndex: selectedLegIndex, points: pointsToSave, color, name }];
     });
+
     setCurrentDrawing([]);
     setEditingVariantId(null);
     setEditingVariantMetadata(null);
   };
+
   const deleteVariant = (id: number) => {
     setVariants(prev => prev.filter(v => v.id !== id));
   };
+
   const editVariant = (id: number) => {
     const variantToEdit = variants.find(v => v.id === id);
     if (variantToEdit) {
@@ -70,19 +76,26 @@ export function useVariants() {
 
   const tryStartAltDragPoint = (mapX: number, mapY: number, zoom: number): boolean => {
     const points = currentDrawingRef.current;
-    if (points.length === 0) return false;
+    if (points.length === 0) 
+      return false;
+
     let nearestIndex = -1;
     let minDist = Infinity;
     const threshold = 50 / zoom;
+
     points.forEach((p, i) => {
       const d = calcPixelDistance({ x: mapX, y: mapY }, p);
-      if (d < minDist && d < threshold) { minDist = d; nearestIndex = i; }
+      if (d < minDist && d < threshold) { 
+        minDist = d; nearestIndex = i; 
+      }
     });
+
     if (nearestIndex >= 0) {
       setIsAltDraggingPoint(true);
       setDraggedPointIndex(nearestIndex);
       return true;
     }
+    
     return false;
   };
 

@@ -24,7 +24,10 @@ export default function FileSection({ onLoadMap, onLoadData, onSaveData, hasCont
         className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white no-drag select-text cursor-text pointer-events-auto"
       />
       
-      <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider pt-2">Project Files</h2>
+      <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider pt-2">
+        Project Files
+      </h2>
+
       <button
         onClick={() => fileInputRef.current?.click()}
         className="w-full flex items-center justify-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-4 rounded-md border border-blue-200 transition-colors text-sm font-medium no-drag cursor-pointer"
@@ -40,7 +43,9 @@ export default function FileSection({ onLoadMap, onLoadData, onSaveData, hasCont
         >
           <FolderOpen size={14} /> Load Data
         </button>
+        
         <input type="file" accept=".json" ref={loadDataRef} className="hidden" onChange={onLoadData} />
+        
         <button
           onClick={onSaveData}
           disabled={!hasControls}

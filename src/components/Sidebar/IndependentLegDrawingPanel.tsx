@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, RotateCcw, Trash2 } from 'lucide-react';
-import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
-import { IndependentLeg, Point } from '../../types';
+import { pixelsToMeters, calcTotalPixelDistance } from '@/utils/geometry';
+import { IndependentLeg, Point } from '@/types';
 
 interface IndependentLegDrawingPanelProps {
   independentLegs: IndependentLeg[];

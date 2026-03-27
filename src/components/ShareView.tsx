@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Download, Check } from 'lucide-react';
-import LegPreviewMap from './LegPreviewMap';
-import { exportShareHtml } from '../utils/shareExport';
-import { Control, Leg, Variant, MapDimensions } from '../types';
-import { calcTotalPixelDistance, pixelsToMeters } from '../utils/geometry';
+import LegPreviewMap from '@/components/LegPreviewMap';
+import { exportShareHtml } from '@/utils/shareExport';
+import { Control, Leg, Variant, MapDimensions } from '@/types';
+import { calcTotalPixelDistance, pixelsToMeters } from '@/utils/geometry';
 
 interface ShareViewProps {
   mapImage: string;
@@ -42,12 +42,14 @@ export default function ShareView({
         onClose();
       }
     };
+    
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [legs.length, onClose]);
 
   const leg = legs[currentIndex];
-  if (!leg) return null;
+  if (!leg) 
+    return null;
 
   const legVariants = variants.filter(v => v.legIndex === leg.index);
   const shortestLen =

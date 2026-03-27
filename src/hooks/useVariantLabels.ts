@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Variant } from '../types';
-import { calcPixelDistance } from '../utils/geometry';
+import { Variant } from '@/types';
+import { calcPixelDistance } from '@/utils/geometry';
 
 export function useVariantLabels() {
   const [isAltDraggingLabel, setIsAltDraggingLabel] = useState(false);
@@ -13,9 +13,12 @@ export function useVariantLabels() {
     variants: Variant[],
     selectedLegIndex: number | null
   ): boolean => {
-    if (selectedLegIndex === null) return false;    // Get variants for the selected leg
+    if (selectedLegIndex === null) 
+      return false;    // Get variants for the selected leg
+
     const legVariants = variants.filter(v => v.legIndex === selectedLegIndex);
-    if (legVariants.length === 0) return false;
+    if (legVariants.length === 0) 
+      return false;
 
     let nearest: Variant | null = null;
     let minDist = Infinity;
@@ -25,7 +28,10 @@ export function useVariantLabels() {
       // Calculate label position
       const midPoint = variant.points[Math.floor(variant.points.length / 2)];
       const labelOffset = variant.labelOffset || { x: 0, y: 0 };
-      const labelPos = { x: midPoint.x + labelOffset.x, y: midPoint.y + labelOffset.y };
+      const labelPos = { 
+        x: midPoint.x + labelOffset.x, 
+        y: midPoint.y + labelOffset.y 
+      };
 
       const d = calcPixelDistance({ x: mapX, y: mapY }, labelPos);
       if (d < minDist && d < threshold) {
@@ -39,6 +45,7 @@ export function useVariantLabels() {
       setDraggedVariantId(nearest.id);
       return true;
     }
+
     return false;
   };
 
@@ -46,6 +53,7 @@ export function useVariantLabels() {
     return variants.map(v => {
       if (v.id === draggedVariantId) {
         const midPoint = v.points[Math.floor(v.points.length / 2)];
+
         return {
           ...v,
           labelOffset: {
@@ -54,6 +62,7 @@ export function useVariantLabels() {
           },
         };
       }
+      
       return v;
     });
   };

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Trash2, Edit2, FileText, Check, Share2 } from 'lucide-react';
-import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
-import { Leg, Variant, AppMode } from '../../types';
-import LegNotesModal from '../LegNotesModal';
+import { pixelsToMeters, calcTotalPixelDistance } from '@/utils/geometry';
+import { Leg, Variant, AppMode } from '@/types';
+import LegNotesModal from '@/components/LegNotesModal';
 
 interface LegAnalysisProps {
   legs: Leg[];

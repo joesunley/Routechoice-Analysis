@@ -1,5 +1,5 @@
-import BaseModal from './BaseModal';
-import { handleNumericInput, inputEventGuard } from '../utils/geometry';
+import BaseModal from '@/components/BaseModal';
+import { handleNumericInput, inputEventGuard } from '@/utils/geometry';
 
 interface CalibrationModalProps {
   value: string;

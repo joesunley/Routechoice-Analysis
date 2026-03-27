@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MapDimensions, PanState } from '../types';
+import { MapDimensions, PanState } from '@/types';
 
 export function useViewport(mapDimensions: MapDimensions) {
   const [zoom, setZoom] = useState(1);
@@ -13,28 +13,36 @@ export function useViewport(mapDimensions: MapDimensions) {
   }, [zoom, pan]);
   useEffect(() => {
     const workspace = workspaceRef.current;
-    if (!workspace) return;
+    if (!workspace) 
+      return;
+
     let isZooming = false;
 
     const onWheel = (e: WheelEvent) => {
-      if (isZooming) return;
+      if (isZooming) 
+        return;
+
       e.preventDefault();
+
       const { zoom: currentZoom, pan: currentPan } = viewportState.current;
       const zoomFactor = 1.41;
 
-      let newZoom = (-e.deltaY > 0) ?
-        currentZoom * zoomFactor :
-        currentZoom / zoomFactor;
+      let newZoom = (-e.deltaY > 0) 
+        ? currentZoom * zoomFactor 
+        : currentZoom / zoomFactor;
     
       newZoom = Math.max(0.01, Math.min(newZoom, 50));
+
       const rect = workspace.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       const mapX = (mouseX - currentPan.x) / currentZoom;
       const mapY = (mouseY - currentPan.y) / currentZoom;
+
       isZooming = true;
       setZoom(newZoom);
       setPan({ x: mouseX - mapX * newZoom, y: mouseY - mapY * newZoom });
+
       setTimeout(() => { isZooming = false; }, 50);
     };
 
@@ -46,6 +54,7 @@ export function useViewport(mapDimensions: MapDimensions) {
       (window.innerWidth - 320) / mapDimensions.width,
       window.innerHeight / mapDimensions.height
     ) * 0.90;
+
     const z = fitZoom > 0 ? fitZoom : 1;
     setZoom(z);
     setPan({
@@ -56,7 +65,8 @@ export function useViewport(mapDimensions: MapDimensions) {
 
   const zoomToCenter = (zoomFactor: number) => {
     const workspace = workspaceRef.current;
-    if (!workspace) return;
+    if (!workspace) 
+      return;
 
     const rect = workspace.getBoundingClientRect();
     const centerX = rect.width / 2;
@@ -67,11 +77,11 @@ export function useViewport(mapDimensions: MapDimensions) {
     const mapY = (centerY - currentPan.y) / currentZoom;
 
     const newZoom = Math.max(0.01, Math.min(currentZoom * zoomFactor, 50));
+    setZoom(newZoom);
     setPan({
       x: centerX - mapX * newZoom,
       y: centerY - mapY * newZoom,
     });
-    setZoom(newZoom);
   };
 
   return { zoom, setZoom, pan, setPan, workspaceRef, viewportState, resetZoom, zoomToCenter };

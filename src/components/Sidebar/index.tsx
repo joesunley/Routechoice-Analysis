@@ -1,13 +1,13 @@
 import React from 'react';
 import { Route } from 'lucide-react';
-import FileSection from './FileSection';
-import SettingsSection from './SettingsSection';
-import ToolSection from './ToolSection';
-import LegDrawingPanel from './LegDrawingPanel';
-import LegAnalysis from './LegAnalysis';
-import IndependentLegDrawingPanel from './IndependentLegDrawingPanel';
-import IndependentLegAnalysis from './IndependentLegAnalysis';
-import { Control, Leg, Variant, Point, AppMode, IndependentLeg, WorkflowMode } from '../../types';
+import FileSection from '@/components/Sidebar/FileSection';
+import SettingsSection from '@/components/Sidebar/SettingsSection';
+import ToolSection from '@/components/Sidebar/ToolSection';
+import LegDrawingPanel from '@/components/Sidebar/LegDrawingPanel';
+import LegAnalysis from '@/components/Sidebar/LegAnalysis';
+import IndependentLegDrawingPanel from '@/components/Sidebar/IndependentLegDrawingPanel';
+import IndependentLegAnalysis from '@/components/Sidebar/IndependentLegAnalysis';
+import { Control, Leg, Variant, Point, AppMode, IndependentLeg, WorkflowMode } from '@/types';
 
 interface SidebarProps {
   onLoadMap: (e: React.ChangeEvent<HTMLInputElement>) => void;

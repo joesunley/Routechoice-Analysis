@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Trash2, Edit2, FileText, Check, Share2 } from 'lucide-react';
-import { pixelsToMeters, calcTotalPixelDistance } from '../../utils/geometry';
-import { IndependentLeg, Variant, AppMode } from '../../types';
-import LegNotesModal from '../LegNotesModal';
+import { pixelsToMeters, calcTotalPixelDistance } from '@/utils/geometry';
+import { IndependentLeg, Variant, AppMode } from '@/types';
+import LegNotesModal from '@/components/LegNotesModal';
 
 interface IndependentLegAnalysisProps {
   independentLegs: IndependentLeg[];
@@ -36,7 +36,9 @@ export default function IndependentLegAnalysis({
   const [notesModalOpen, setNotesModalOpen] = useState(false);
   const [notesLegId, setNotesLegId] = useState<number | null>(null);
 
-  const notesLeg = notesLegId !== null ? independentLegs.find(l => l.id === notesLegId) : null;
+  const notesLeg = notesLegId !== null 
+    ? independentLegs.find(l => l.id === notesLegId) 
+    : null;
 
   return (
     <>
@@ -72,7 +74,10 @@ export default function IndependentLegAnalysis({
                   }`}
                   onClick={() => { setMode('variants'); onSelectLeg(leg.id); }}
                 >
-                  <span className="text-xs font-black text-slate-700">{leg.label}</span>
+                  <span className="text-xs font-black text-slate-700">
+                    {leg.label}
+                  </span>
+
                   <button
                     onClick={e => {
                       e.stopPropagation();
@@ -84,7 +89,9 @@ export default function IndependentLegAnalysis({
                   >
                     <FileText size={14} />
                   </button>
+
                   {leg.notes && <div className="w-1 h-1 rounded-full bg-slate-400" title="This leg has notes" />}
+
                   <span className="text-[11px] font-mono text-slate-400 ml-auto">
                     Straight: {straightMeters.toFixed(0)}m
                   </span>
@@ -98,9 +105,11 @@ export default function IndependentLegAnalysis({
                       const shortest = Math.min(
                         ...legVariants.map(v => pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale))
                       );
+
                       return legVariants.map(v => {
                         const len = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
                         const pct = ((len / shortest) - 1) * 100;
+                        
                         return (
                           <div
                             key={v.id}

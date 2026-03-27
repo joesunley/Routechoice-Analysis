@@ -1,9 +1,9 @@
 import React from 'react';
 import {
   BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE
-} from '../constants';
-import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from '../utils/geometry';
-import { Control, Variant, Point, IndependentLeg, WorkflowMode } from '../types';
+} from '@/constants';
+import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from '@/utils/geometry';
+import { Control, Variant, Point, IndependentLeg, WorkflowMode } from '@/types';
 
 interface MapOverlayProps {
   svgRef: React.RefObject<SVGSVGElement | null>;
@@ -202,15 +202,22 @@ export default function MapOverlay({
 
       {/* Leg Lines */}
       {workflowMode === 'course' && controls.length >= 2 && controls.map((c, i) => {
-        if (i === 0) return null;
+        if (i === 0) 
+          return null;
+
         const p1 = controls[i - 1];
         const p2 = c;
         const dist = calcPixelDistance(p1, p2);
+        
         const startMargin = (i - 1 === 0) ? circleRadius * 1.1 : circleRadius;
         const endMargin = (i === controls.length - 1) ? circleRadius * 1.2 : circleRadius;
-        if (dist < startMargin + endMargin) return null;
+        
+        if (dist < startMargin + endMargin) 
+          return null;
+        
         const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
         const isDimmed = isVariantMode && selectedLegIndex !== null && selectedLegIndex !== i - 1;
+        
         return (
           <line
             key={`line-${i}`}
@@ -223,12 +230,17 @@ export default function MapOverlay({
         );      })}      {/* Route Variants (course) */}
       {workflowMode === 'course' && isVariantMode && variants.map(v => {
         // Skip rendering the variant that's currently being edited
-        if (v.id === editingVariantId) return null;
-        if (v.legIndex !== selectedLegIndex) return null;
+        if (v.id === editingVariantId) 
+          return null;
+
+        if (v.legIndex !== selectedLegIndex) 
+          return null;
+
         const midPoint = v.points[Math.floor(v.points.length / 2)];
         const labelOffset = v.labelOffset || { x: 0, y: 0 };
         const isBeingDragged = isAltDraggingLabel && draggedVariantId === v.id;
         const variantDistance = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
+
         return (
           <g key={v.id} opacity={isBeingDragged ? 0.6 : 1}>
             <polyline
@@ -273,7 +285,6 @@ export default function MapOverlay({
       {/* ── INDEPENDENT LEGS WORKFLOW ───────────────────────── */}
       {workflowMode === 'independent' && (
         <>
-          {/* Pending start – ghost circle */}
           {pendingStart && (
             <circle
               cx={pendingStart.x} cy={pendingStart.y}
@@ -285,9 +296,12 @@ export default function MapOverlay({
 
           {independentLegs.map(leg => {
             const isSelected = leg.id === indSelectedLegId;
-            if (isVariantMode && !isSelected) return null;
+            if (isVariantMode && !isSelected) 
+              return null;
+
             const dist = calcPixelDistance(leg.start, leg.end);
             const angle = Math.atan2(leg.end.y - leg.start.y, leg.end.x - leg.start.x);
+
             const midX = (leg.start.x + leg.end.x) / 2;
             const midY = (leg.start.y + leg.end.y) / 2;
             
@@ -300,6 +314,7 @@ export default function MapOverlay({
             
             const isStartDragged = indDraggedLegId === leg.id && indDraggedEndpoint === 'start';
             const isEndDragged = indDraggedLegId === leg.id && indDraggedEndpoint === 'end';
+
             return (
               <g key={leg.id}>
                 {/* Start circle */}
@@ -348,12 +363,17 @@ export default function MapOverlay({
 
           {/* Independent variants */}
           {isVariantMode && indVariants.map(v => {
-            if (v.id === indEditingVariantId) return null;
-            if (v.legIndex !== indSelectedLegId) return null;
+            if (v.id === indEditingVariantId) 
+              return null;
+
+            if (v.legIndex !== indSelectedLegId) 
+              return null;
+
             const midPoint = v.points[Math.floor(v.points.length / 2)];
             const labelOffset = v.labelOffset || { x: 0, y: 0 };
             const isBeingDragged = isIndAltDraggingLabel && indDraggedVariantId === v.id;
             const variantDistance = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
+            
             return (
               <g key={v.id} opacity={isBeingDragged ? 0.6 : 1}>
                 <polyline

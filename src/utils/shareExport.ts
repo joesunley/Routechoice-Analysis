@@ -1,7 +1,7 @@
-import { Control, Leg, Variant, MapDimensions, IndependentLeg } from '../types';
-import { BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE } from '../constants';
-import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from './geometry';
-import { computeLegLayout } from '../components/LegPreviewMap';
+import { Control, Leg, Variant, MapDimensions, IndependentLeg } from '@/types';
+import { BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE } from '@/constants';
+import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from '@/utils/geometry';
+import { computeLegLayout } from '@/components/LegPreviewMap';
 
 export interface ShareExportOptions {
   mapImage: string;
@@ -36,11 +36,15 @@ function generateLegSvg(
   svgH: number,
 ): string {
   const { rotDeg, zoom, pan } = computeLegLayout(controls, legVariants, legIndex, svgW, svgH, 60, drawingScale);
+
   const cx = svgW / 2;
   const cy = svgH / 2;
+
   const c1 = controls[legIndex];
   const c2 = controls[legIndex + 1];
-  if (!c1 || !c2) return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}"><rect width="${svgW}" height="${svgH}" fill="#1e293b"/></svg>`;
+
+  if (!c1 || !c2) 
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}"><rect width="${svgW}" height="${svgH}" fill="#1e293b"/></svg>`;
 
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
   const lw = BASE_LINE_WIDTH * drawingScale;
@@ -54,7 +58,13 @@ function generateLegSvg(
   const endMargin = isFinishControl ? circleRadius * 1.2 : circleRadius;
   if (dist > startMargin + endMargin) {
     const angle = Math.atan2(c2.y - c1.y, c2.x - c1.x);
-    lineSvg = `<line x1="${c1.x + Math.cos(angle) * startMargin}" y1="${c1.y + Math.sin(angle) * startMargin}" x2="${c2.x - Math.cos(angle) * endMargin}" y2="${c2.y - Math.sin(angle) * endMargin}" stroke="#ec4899" stroke-width="${lw}"/>`;
+
+    const x1 = c1.x + Math.cos(angle) * startMargin;
+    const y1 = c1.y + Math.sin(angle) * startMargin;
+    const x2 = c2.x - Math.cos(angle) * endMargin;
+    const y2 = c2.y - Math.sin(angle) * endMargin;
+
+    lineSvg = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ec4899" stroke-width="${lw}"/>`;
   }
 
   // Start control
@@ -62,11 +72,13 @@ function generateLegSvg(
   if (isStartControl) {
     const size = circleRadius * 1.3;
     const startRot = Math.atan2(c2.y - c1.y, c2.x - c1.x) * (180 / Math.PI) + 90;
+
     startSvg = `<polygon points="0,${-size} ${-size * 0.866},${size * 0.5} ${size * 0.866},${size * 0.5}" fill="none" stroke="#ec4899" stroke-width="${lw}" transform="translate(${c1.x},${c1.y}) rotate(${startRot})"/>`;
   } else {
     const lp = { x: circleRadius * 1.5, y: -circleRadius * 1.5 };
     const lx = c1.x + lp.x, ly = c1.y + lp.y;
     const fs = BASE_TEXT_SIZE * drawingScale;
+    
     startSvg = `<circle cx="${c1.x}" cy="${c1.y}" r="${circleRadius}" fill="none" stroke="#ec4899" stroke-width="${lw}"/><text x="${lx}" y="${ly}" fill="#ec4899" font-size="${fs}" font-weight="bold" stroke="white" stroke-width="${4 * drawingScale}" paint-order="stroke" text-anchor="middle" dominant-baseline="middle" transform="rotate(${-rotDeg},${lx},${ly})">${legIndex}</text>`;
   }
 
@@ -86,18 +98,23 @@ function generateLegSvg(
   for (const v of legVariants) {
     const isChosen = v.chosen === true;
     const pts = v.points.map(p => `${p.x},${p.y}`).join(' ');
+
     variantsSvg += `<polyline points="${pts}" fill="none" stroke="${v.color}" stroke-width="${lw * (isChosen ? 2.5 : 1)}"/>`;
 
     if (v.points.length > 0) {
       const midPoint = v.points[Math.floor(v.points.length / 2)];
+
       const labelOffset = v.labelOffset ?? { x: 0, y: 0 };
       const lx = midPoint.x + labelOffset.x;
       const ly = midPoint.y + labelOffset.y;
+
       const actualLen = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
+
       const fontSize = BASE_VARIANT_TEXT_SIZE * drawingScale * (isChosen ? 1.4 : 1);
       const fw = isChosen ? 'bold' : 'normal';
       const strokeWidth = isChosen ? 3 * drawingScale : 2 * drawingScale;
       const label = `${isChosen ? '\u2605 ' : ''}${v.name}: ${actualLen.toFixed(0)}m`;
+
       variantsSvg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="${v.color}" font-size="${fontSize}" font-weight="${fw}" stroke="white" stroke-width="${strokeWidth}" paint-order="stroke" transform="rotate(${-rotDeg},${lx},${ly})">${escapeHtml(label)}</text>`;
     }
   }
@@ -130,16 +147,20 @@ function generateInfoPanel(leg: Leg, legVariants: Variant[], dpi: number, scale:
     for (const v of legVariants) {
       const actualLen = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
       const percentExtra = shortestLen > 0 ? ((actualLen / shortestLen) - 1) * 100 : 0;
+
       const isChosen = v.chosen === true;
       const bg = isChosen ? 'rgba(21,128,61,0.3)' : '#334155';
       const border = isChosen ? '#16a34a' : '#475569';
       const nameColor = isChosen ? '#86efac' : 'white';
       const chosenMark = isChosen ? '\u2605 ' : '';
+
       const pctHtml =
         percentExtra > 0
           ? `<span style="font-size:12px;font-weight:bold;color:${percentExtra > 10 ? '#fb923c' : '#94a3b8'}">+${percentExtra.toFixed(0)}%</span>`
           : '';
+
       const checkHtml = isChosen ? '<span style="color:#4ade80;margin-left:4px;font-size:14px">&#10003;</span>' : '';
+
       variantsHtml += `<div style="display:flex;align-items:center;gap:8px;background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 12px">
         <div style="width:12px;height:12px;border-radius:50%;background:${v.color};flex-shrink:0"></div>
         <span style="font-weight:bold;font-size:14px;color:${nameColor}">${chosenMark}${escapeHtml(v.name)}</span>
@@ -147,6 +168,7 @@ function generateInfoPanel(leg: Leg, legVariants: Variant[], dpi: number, scale:
         ${pctHtml}${checkHtml}
       </div>`;
     }
+
     variantsHtml += '</div>';
   }
 
@@ -188,8 +210,10 @@ export function exportShareHtml({
   for (let i = 0; i < legs.length; i++) {
     const leg = legs[i];
     const legVariants = variants.filter(v => v.legIndex === leg.index);
+
     const mapSvg = generateLegSvg(mapDimensions, controls, legVariants, leg.index, dpi, scale, drawingScale, SVG_W, SVG_H);
     const infoHtml = generateInfoPanel(leg, legVariants, dpi, scale);
+
     slidesHtml += `<div class="slide" id="slide-${i}"${i === 0 ? ' style="display:flex"' : ''}>
       <div class="map-panel">${mapSvg}</div>
       <div class="info-panel">${infoHtml}</div>
@@ -301,6 +325,7 @@ export function exportShareHtml({
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
@@ -330,6 +355,7 @@ function generateIndependentLegSvg(
   // Represent the two leg controls as a [start, end] array so computeLegLayout works
   const fakeCtrls: Control[] = [leg.start, leg.end];
   const { rotDeg, zoom, pan } = computeLegLayout(fakeCtrls, legVariants, 0, svgW, svgH, 60, drawingScale);
+
   const cx = svgW / 2;
   const cy = svgH / 2;
 
@@ -339,9 +365,15 @@ function generateIndependentLegSvg(
   // Connecting line between the two circle edges
   const dist = calcPixelDistance(leg.start, leg.end);
   const angle = Math.atan2(leg.end.y - leg.start.y, leg.end.x - leg.start.x);
+
   let lineSvg = '';
   if (dist > circleRadius * 2) {
-    lineSvg = `<line x1="${leg.start.x + Math.cos(angle) * circleRadius}" y1="${leg.start.y + Math.sin(angle) * circleRadius}" x2="${leg.end.x - Math.cos(angle) * circleRadius}" y2="${leg.end.y - Math.sin(angle) * circleRadius}" stroke="#8b5cf6" stroke-width="${lw}"/>`;
+    const x1 = leg.start.x + Math.cos(angle) * circleRadius;
+    const y1 = leg.start.y + Math.sin(angle) * circleRadius;
+    const x2 = leg.end.x - Math.cos(angle) * circleRadius;
+    const y2 = leg.end.y - Math.sin(angle) * circleRadius;
+
+    lineSvg = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#8b5cf6" stroke-width="${lw}"/>`;
   }
 
   // Both controls as plain circles
@@ -359,17 +391,22 @@ function generateIndependentLegSvg(
   for (const v of legVariants) {
     const isChosen = v.chosen === true;
     const pts = v.points.map(p => `${p.x},${p.y}`).join(' ');
+
     variantsSvg += `<polyline points="${pts}" fill="none" stroke="${v.color}" stroke-width="${lw * (isChosen ? 2.5 : 1)}"/>`;
+
     if (v.points.length > 0) {
       const midPoint = v.points[Math.floor(v.points.length / 2)];
       const labelOffset = v.labelOffset ?? { x: 0, y: 0 };
       const lx = midPoint.x + labelOffset.x;
       const ly = midPoint.y + labelOffset.y;
+
       const actualLen = pixelsToMeters(calcTotalPixelDistance(v.points), dpi, scale);
       const fontSize = BASE_VARIANT_TEXT_SIZE * drawingScale * (isChosen ? 1.4 : 1);
+
       const fw = isChosen ? 'bold' : 'normal';
       const strokeWidth = isChosen ? 3 * drawingScale : 2 * drawingScale;
       const label = `${isChosen ? '\u2605 ' : ''}${v.name}: ${actualLen.toFixed(0)}m`;
+
       variantsSvg += `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="${v.color}" font-size="${fontSize}" font-weight="${fw}" stroke="white" stroke-width="${strokeWidth}" paint-order="stroke" transform="rotate(${-rotDeg},${lx},${ly})">${escapeHtml(label)}</text>`;
     }
   }
@@ -398,6 +435,7 @@ function generateIndependentInfoPanel(leg: IndependentLeg, legVariants: Variant[
     straightLength: pixelsToMeters(leg.straightLength, dpi, scale),
     notes: leg.notes,
   };
+
   return generateInfoPanel(fakeLeg, legVariants, dpi, scale);
 }
 
@@ -420,8 +458,10 @@ export function exportIndependentLegsHtml({
   for (let i = 0; i < independentLegs.length; i++) {
     const leg = independentLegs[i];
     const legVariants = variants.filter(v => v.legIndex === leg.id);
+
     const mapSvg = generateIndependentLegSvg(mapDimensions, leg, legVariants, dpi, scale, drawingScale, SVG_W, SVG_H);
     const infoHtml = generateIndependentInfoPanel(leg, legVariants, dpi, scale);
+
     slidesHtml += `<div class="slide" id="slide-${i}"${i === 0 ? ' style="display:flex"' : ''}>
       <div class="map-panel">${mapSvg}</div>
       <div class="info-panel">${infoHtml}</div>
@@ -529,6 +569,7 @@ export function exportIndependentLegsHtml({
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 

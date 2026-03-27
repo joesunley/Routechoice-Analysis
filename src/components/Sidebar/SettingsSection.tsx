@@ -1,7 +1,7 @@
 import { Settings, Ruler } from 'lucide-react';
-import { COMMON_SCALES } from '../../constants';
-import { handleNumericInput, inputEventGuard } from '../../utils/geometry';
-import { AppMode } from '../../types';
+import { COMMON_SCALES } from '@/constants';
+import { handleNumericInput, inputEventGuard } from '@/utils/geometry';
+import { AppMode } from '@/types';
 
 interface SettingsSectionProps {
   scale: number;

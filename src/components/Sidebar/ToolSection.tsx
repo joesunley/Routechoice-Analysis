@@ -1,5 +1,5 @@
 import { MapPin, Route, Layers } from 'lucide-react';
-import { AppMode, WorkflowMode } from '../../types';
+import { AppMode, WorkflowMode } from '@/types';
 
 interface ToolSectionProps {
   mode: AppMode;

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Control } from '../types';
-import { calcPixelDistance } from '../utils/geometry';
+import { Control } from '@/types';
+import { calcPixelDistance } from '@/utils/geometry';
 
 export function useControls() {
   const [controls, setControls] = useState<Control[]>([]);
@@ -11,8 +11,10 @@ export function useControls() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => { if (e.altKey) setAltKeyPressed(true); };
     const handleKeyUp = (e: KeyboardEvent) => { if (!e.altKey) setAltKeyPressed(false); };
+
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
@@ -24,19 +26,26 @@ export function useControls() {
   };
 
   const tryStartAltDrag = (mapX: number, mapY: number, zoom: number): boolean => {
-    if (controls.length === 0) return false;
+    if (controls.length === 0) 
+      return false;
+    
     let nearest: Control | null = null;
     let minDist = Infinity;
     const threshold = 50 / zoom;
+
     controls.forEach(c => {
       const d = calcPixelDistance({ x: mapX, y: mapY }, c);
-      if (d < minDist && d < threshold) { minDist = d; nearest = c; }
+      if (d < minDist && d < threshold) { 
+        minDist = d; nearest = c; 
+      }
     });
+
     if (nearest) {
       setIsAltDragging(true);
       setDraggedControlId((nearest as Control).id);
       return true;
     }
+    
     return false;
   };
 

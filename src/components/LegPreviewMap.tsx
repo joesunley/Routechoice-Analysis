@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
-import { Control, Variant, MapDimensions } from '../types';
-import { BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE } from '../constants';
-import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from '../utils/geometry';
+import { Control, Variant, MapDimensions } from '@/types';
+import { BASE_CONTROL_RADIUS, BASE_LINE_WIDTH, BASE_TEXT_SIZE, BASE_VARIANT_TEXT_SIZE } from '@/constants';
+import { calcPixelDistance, calcTotalPixelDistance, pixelsToMeters } from '@/utils/geometry';
 
 interface LegPreviewMapProps {
   mapImage: string;
@@ -22,20 +22,29 @@ function getLabelPos(controlIndex: number, controls: Control[], radius: number):
     { x: offset, y: offset },
     { x: -offset, y: offset },
   ];
-  if (controlIndex === 0 || controlIndex === controls.length - 1) return quadrants[1];
+
+  if (controlIndex === 0 || controlIndex === controls.length - 1) 
+    return quadrants[1];
+
   const c = controls[controlIndex];
   const prev = controls[controlIndex - 1];
   const next = controls[controlIndex + 1];
+
   const aPrev = Math.atan2(prev.y - c.y, prev.x - c.x);
   const aNext = Math.atan2(next.y - c.y, next.x - c.x);
+
   let best = 1, bestScore = -Infinity;
   quadrants.forEach((q, i) => {
     const qa = Math.atan2(q.y, q.x);
     const d1 = Math.min(Math.abs(aPrev - qa), Math.PI * 2 - Math.abs(aPrev - qa));
     const d2 = Math.min(Math.abs(aNext - qa), Math.PI * 2 - Math.abs(aNext - qa));
     const score = Math.min(d1, d2);
-    if (score > bestScore) { bestScore = score; best = i; }
+
+    if (score > bestScore) { 
+      bestScore = score; best = i; 
+    }
   });
+  
   return quadrants[best];
 }
 
@@ -56,7 +65,8 @@ export function computeLegLayout(
 ): Layout {
   const c1 = controls[legIndex];
   const c2 = controls[legIndex + 1];
-  if (!c1 || !c2) return { rotDeg: 0, zoom: 1, pan: { x: 0, y: 0 } };
+  if (!c1 || !c2) 
+    return { rotDeg: 0, zoom: 1, pan: { x: 0, y: 0 } };
 
   const rotDeg = -(Math.atan2(c2.y - c1.y, c2.x - c1.x) * (180 / Math.PI) + 90);
   const theta = rotDeg * Math.PI / 180;
@@ -80,14 +90,17 @@ export function computeLegLayout(
   for (const p of allPoints) {
     const dx = p.x - midX;
     const dy = p.y - midY;
+
     const rx = Math.abs(dx * Math.cos(theta) - dy * Math.sin(theta));
     const ry = Math.abs(dx * Math.sin(theta) + dy * Math.cos(theta));
+
     if (rx > maxRx) maxRx = rx;
     if (ry > maxRy) maxRy = ry;
   }
 
   const cx = containerW / 2;
   const cy = containerH / 2;
+
   const fitZoomX = maxRx > 0 ? (cx - padding) / maxRx : 1;
   const fitZoomY = maxRy > 0 ? (cy - padding) / maxRy : 1;
   const zoom = Math.max(0.01, Math.min(Math.min(fitZoomX, fitZoomY), 50));
@@ -116,15 +129,20 @@ export default function LegPreviewMap({
     let raf: number;
     const measure = () => {
       const el = containerRef.current;
-      if (!el) return;
+      if (!el) 
+        return;
+
       const { width, height } = el.getBoundingClientRect();
+
       if (width > 0 && height > 0) {
         setLayout(computeLegLayout(controls, legVariants, legIndex, width, height, 80, drawingScale));
       } else {
         raf = requestAnimationFrame(measure);
       }
     };
+
     measure();
+
     return () => cancelAnimationFrame(raf);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -132,10 +150,12 @@ export default function LegPreviewMap({
   const { rotDeg, zoom, pan } = layout;
   const circleRadius = BASE_CONTROL_RADIUS * drawingScale;
   const lw = BASE_LINE_WIDTH * drawingScale;
+
   const c1 = controls[legIndex];
   const c2 = controls[legIndex + 1];
 
-  if (!c1 || !c2) return <div ref={containerRef} className="w-full h-full bg-slate-800" />;
+  if (!c1 || !c2) 
+    return <div ref={containerRef} className="w-full h-full bg-slate-800" />;
 
   const isStartControl = legIndex === 0;
   const isFinishControl = legIndex === controls.length - 2;
@@ -166,7 +186,10 @@ export default function LegPreviewMap({
               const dist = calcPixelDistance(c1, c2);
               const startMargin = isStartControl ? circleRadius * 1.1 : circleRadius;
               const endMargin = isFinishControl ? circleRadius * 1.2 : circleRadius;
-              if (dist < startMargin + endMargin) return null;
+
+              if (dist < startMargin + endMargin) 
+                return null;
+
               const angle = Math.atan2(c2.y - c1.y, c2.x - c1.x);
               return (
                 <line
@@ -184,6 +207,7 @@ export default function LegPreviewMap({
             {isStartControl ? (() => {
               const size = circleRadius * 1.3;
               const rotation = Math.atan2(c2.y - c1.y, c2.x - c1.x) * (180 / Math.PI) + 90;
+
               return (
                 <polygon
                   points={`0,${-size} ${-size * 0.866},${size * 0.5} ${size * 0.866},${size * 0.5}`}
@@ -195,6 +219,7 @@ export default function LegPreviewMap({
               );
             })() : (() => {
               const lp = getLabelPos(legIndex, controls, circleRadius);
+
               return (
                 <g>
                   <circle cx={c1.x} cy={c1.y} r={circleRadius} fill="none" stroke="#ec4899" strokeWidth={lw} />
@@ -217,6 +242,7 @@ export default function LegPreviewMap({
               </g>
             ) : (() => {
               const lp = getLabelPos(legIndex + 1, controls, circleRadius);
+              
               return (
                 <g>
                   <circle cx={c2.x} cy={c2.y} r={circleRadius} fill="none" stroke="#ec4899" strokeWidth={lw} />
