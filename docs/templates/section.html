@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ section.title }} — {{ config.title }}{% endblock title %}
+{% block description %}{{ section.description }}{% endblock description %}
+
+{% block content %}
+<div class="docs-layout">
+  <aside class="docs-sidebar">
+    <nav aria-label="Documentation">
+      <p class="sidebar-heading">Documentation</p>
+      <ul class="sidebar-nav">
+        {% for p in section.pages %}
+        <li>
+          <a href="#{{ p.slug }}" class="sidebar-link" data-slug="{{ p.slug }}">
+            {{ p.title }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </aside>
+
+  <div class="docs-content">
+    {% for p in section.pages %}
+    <section id="{{ p.slug }}" class="doc-section">
+      <h2 class="doc-section-title">{{ p.title }}</h2>
+      <div class="prose">
+        {{ p.content | safe }}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+(function () {
+  var links = Array.from(document.querySelectorAll('.sidebar-link[data-slug]'));
+  var sections = Array.from(document.querySelectorAll('.doc-section'));
+  if (!links.length || !sections.length || !('IntersectionObserver' in window)) return;
+
+  function activate(id) {
+    links.forEach(function (l) {
+      l.classList.toggle('active', l.dataset.slug === id);
+    });
+  }
+
+  activate(sections[0].id);
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) activate(entry.target.id);
+    });
+  }, { rootMargin: '-60px 0px -60% 0px', threshold: 0 });
+
+  sections.forEach(function (s) { observer.observe(s); });
+})();
+</script>
+{% endblock content %}

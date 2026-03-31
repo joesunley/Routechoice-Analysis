@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page.title }} — {{ config.title }}{% endblock title %}
+{% block description %}{{ page.description | default(value=config.description) }}{% endblock description %}
+
+{% block content %}
+<div class="docs-layout">
+  <aside class="docs-sidebar">
+    <nav aria-label="Documentation">
+      <p class="sidebar-heading">Documentation</p>
+      <ul class="sidebar-nav">
+        {% set docs_section = get_section(path="docs/_index.md") %}
+        {% for p in docs_section.pages %}
+        <li>
+          <a href="{{ docs_section.permalink }}#{{ p.slug }}"
+             class="sidebar-link{% if p.permalink == page.permalink %} active{% endif %}">
+            {{ p.title }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </nav>
+  </aside>
+
+  <article class="docs-content">
+    <h1>{{ page.title }}</h1>
+    <div class="prose">
+      {{ page.content | safe }}
+    </div>
+
+    <nav class="page-nav" aria-label="Page navigation">
+      {% if page.earlier %}
+      <a href="{{ page.earlier.permalink }}" class="page-nav-prev">← {{ page.earlier.title }}</a>
+      {% else %}
+      <span></span>
+      {% endif %}
+      {% if page.later %}
+      <a href="{{ page.later.permalink }}" class="page-nav-next">{{ page.later.title }} →</a>
+      {% endif %}
+    </nav>
+  </article>
+</div>
+{% endblock content %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-container">
+    <h1 class="hero-title">Routechoice Analysis</h1>
+    <a href="{{ config.extra.app_url }}" class="btn-primary">Get Started →</a>
+  </div>
+</section>
+
+<section class="app-screenshot">
+  <div class="app-screenshot-container">
+    <img src="{{ get_url(path='screenshot.png') }}" alt="Routechoice Analysis app screenshot" class="app-screenshot-img" />
+  </div>
+</section>
+
+
+{% endblock content %}

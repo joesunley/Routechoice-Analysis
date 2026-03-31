@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ config.title }}</title>
+  <meta name="description" content="{% block description %}{{ config.description }}{% endblock description %}" />
+  <link rel="stylesheet" href="{{ get_url(path='style.css') }}" />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="{{ config.base_url }}" class="nav-brand">
+        <img src="{{ get_url(path='icon.svg') }}" alt="Routechoice Analysis" class="nav-brand-icon" />
+        Routechoice Analysis
+      </a>
+      <ul class="nav-links">
+          <li><a href="{{ get_url(path='docs') }}" class="nav-link">Docs</a></li>
+          <li><a href="{{ config.extra.github_url }}" class="nav-link" target="_blank" rel="noopener">GitHub</a></li>
+          <li><a href="{{ config.extra.app_url }}" class="nav-link nav-link-gh">App</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    {% block content %}{% endblock content %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <p>&copy; 2026 Joe Sunley | <a href="mailto:me@joesunley.com">me@joesunley.com</a></p>
+    </div>
+  </footer>
+</body>
+</html>

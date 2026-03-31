@@ -1,0 +1,13 @@
+base_url = "/"
+title = "Routechoice Analysis"
+description = "Interactive orienteering route choice planning and post-race analysis tool."
+compile_sass = false
+generate_feeds = false
+
+[markdown]
+highlight_code = true
+highlight_theme = "base16-ocean-dark"
+
+[extra]
+github_url = "https://github.com/joesunley/Routechoice-Analysis"
+app_url = "https://routechoice-analysis.pages.dev"
