@@ -4,6 +4,7 @@
 {% block description %}{{ page.description | default(value=config.description) }}{% endblock description %}
 
 {% block content %}
+<div class="docs-bg">
 <div class="docs-layout">
   <aside class="docs-sidebar">
     <nav aria-label="Documentation">
@@ -39,5 +40,6 @@
       {% endif %}
     </nav>
   </article>
+</div>
 </div>
 {% endblock content %}
